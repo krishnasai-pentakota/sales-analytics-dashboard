@@ -6,7 +6,7 @@
 
 ![Executive overview](screenshots/executive_overview.png)
 
-*Real order-to-cash data, anonymised (company, customers and staff are aliased). Open [`dashboard/index.html`](dashboard/index.html) in a browser to use it.*
+*Real order-to-cash data, anonymised (company, customers and staff are aliased). **[Open the live dashboard](https://krishnasai-pentakota.github.io/sales-analytics-dashboard/)**, or open `dashboard/index.html` locally.*
 
 ## Business problem
 Orders, dispatches and the accounts report lived in separate files that were never reconciled. Stock transfers to head office looked like sales, order-level charges were easy to double count, and a half-finished month was compared with a full one. Management could not say, from one place, how much was sold, to whom, what was still open and whether deliveries were on time.
