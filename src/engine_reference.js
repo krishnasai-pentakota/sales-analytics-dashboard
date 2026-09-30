@@ -8,7 +8,9 @@ const code = html.match(/<script>\s*\/\* Sales engine[\s\S]*?<\/script>/)[0].rep
 const sandbox = { module: { exports: {} }, console };
 vm.runInNewContext(code + '\nmodule.exports = Engine;', sandbox);
 const E = sandbox.module.exports;
-const M = E.build(E.decodePayload(payload));
+const raw = E.decodePayload(payload);
+raw.settings.reliable_from = '2025-04-01';   // same as the dashboard's HIST_COMPLETE_FROM
+const M = E.build(raw);
 const base = { cat: 'ALL', sub: 'ALL', cust: 'ALL', sp: 'ALL', scope: 'CUSTOMER', cmp: 'LY', ybasis: 1, grain: 'M' };
 const cases = [
   { name: 'Sep 2026 all products', f: { ...base, period: Date.UTC(2026, 8, 1) } },
@@ -24,4 +26,8 @@ const out = cases.map(({ name, f }) => {
   return { name, filter: f, net: a.cur.net, intake: a.cur.intake, book_to_bill: a.cur.b2b, otd: a.cur.otd, otd_lines: a.cur.otdN,
            open_value: a.openVal, open_lines: a.openLines, overdue_value: a.overdueVal, overdue_lines: a.overdueLines };
 });
-process.stdout.write(JSON.stringify({ data_end: M.dataEnd, cases: out }, null, 1));
+// the trend must follow the Compare choice: with 'previous period', each bar's comparison is the bar before it
+const tr = E.analyse(M, { ...base, cmp: 'PREV', period: Date.UTC(2026, 8, 1) }).trend;
+const prevTrend = { last_net: tr[tr.length - 1].net, last_comparison: tr[tr.length - 1].netLY, previous_bar_net: tr[tr.length - 2].net };
+const season = E.seasonality(M, base).map(r => ({ y: r.y, m: r.m, net: r.net }));
+process.stdout.write(JSON.stringify({ data_end: M.dataEnd, cases: out, prev_trend: prevTrend, season }, null, 1));

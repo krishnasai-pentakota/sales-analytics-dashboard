@@ -178,8 +178,8 @@ dl.defs dt{font-weight:700} dl.defs dd{margin:0; color:var(--ink-2)}
       <button type="button" data-v="Y" aria-pressed="false" title="Year">Year</button>
     </div>
     <div class="sel"><label for="f-period">Period</label><select id="f-period"></select></div>
-    <div class="sel"><label for="f-cmp">Compare</label><select id="f-cmp"><option value="LY">vs last year</option><option value="PREV">vs previous period</option></select></div>
-    <div class="sel"><label for="f-yb">Year</label><select id="f-yb"><option value="1">Jan–Dec</option><option value="4">FY Apr–Mar</option></select></div>
+    <div class="sel"><label for="f-cmp">Compare</label><select id="f-cmp"><option value="PREV" selected>vs previous period</option><option value="LY">vs same period last year</option></select></div>
+    <div class="sel"><label for="f-yb">Year</label><select id="f-yb"><option value="4" selected>FY Apr–Mar</option><option value="1">Jan–Dec</option></select></div>
   </div>
 </div>
 
@@ -230,6 +230,14 @@ dl.defs dt{font-weight:700} dl.defs dd{margin:0; color:var(--ink-2)}
           <div class="legend" id="trend-legend"></div>
           <div id="c-trend" class="chart" data-h="330"></div>
           <div class="note" id="trend-note"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div><h2 id="sea-title">Seasonality by month</h2><div class="sub" id="sea-sub"></div></div>
+          </div>
+          <div class="legend" id="sea-legend"></div>
+          <div id="c-season" class="chart" data-h="300"></div>
+          <div class="note" id="sea-note"></div>
         </div>
         <div class="two">
           <div class="card">
@@ -364,7 +372,7 @@ dl.defs dt{font-weight:700} dl.defs dd{margin:0; color:var(--ink-2)}
           <dt>Open order book</dt><dd>OPEN and PARTIAL lines today; value = order value × balance ÷ order qty. Overdue = committed date has passed.</dd>
           <dt>On-time delivery</dt><dd>Lines that became COMPLETED in the period whose last dispatch was on or before the committed date, out of completed lines that have a committed date.</dd>
           <dt>Book-to-bill</dt><dd>Orders ₹ ÷ net sales ₹ in the same period. Above 1 = order book growing.</dd>
-          <dt>Like-for-like</dt><dd>When the period is still running, the comparison period is cut at the same day (e.g. 1–29 Sep vs 1–29 Sep last year).</dd>
+          <dt>Like-for-like</dt><dd>When the period is still running, the comparison period is cut at the same day (e.g. 1–29 Sep vs 1–29 Sep last year, or vs the same number of days of the previous week / month / quarter).</dd>
           <dt>Customers</dt><dd>Reports roll up by customer. A customer with several accounts is reported as one customer, with its accounts shown underneath. Internal HQ transfers and inventory orders are excluded unless "Incl. HQ / stock" is chosen.</dd>
         </dl>
       </div>
@@ -626,6 +634,18 @@ const Engine = (() => {
   function groupSum(rows, keyFn, valFn) { const m = new Map(); for (const r of rows) { const k = keyFn(r); if (k === null || k === undefined) continue; const v = valFn(r); if (v === null || v === undefined) continue; m.set(k, (m.get(k) || 0) + v); } return m; }
   const inR = (t, r) => t !== null && t >= r[0] && t <= r[1];
 
+  // every complete month in the reliable history, for the seasonality chart (respects the filters)
+  function seasonality(M0, f) {
+    const M = { fo: M0.orders.filter(o => orderPass(o, f)), fs: M0.sales.filter(s => salePass(s, f)) };
+    const out = [];
+    for (const p of periodsBetween(M0.reliableFrom, M0.dataEnd, 'M', 1)) {
+      if (p < M0.reliableFrom || periodEnd(p, 'M') > M0.dataEnd) continue;
+      const c = measures(M, f, [p, periodEnd(p, 'M')]), d = new Date(p);
+      out.push({ start: p, m: d.getUTCMonth(), y: d.getUTCFullYear(), net: c.net, intake: c.intake, b2b: c.b2b, otd: c.otd, otdN: c.otdN });
+    }
+    return out;
+  }
+
   function analyse(M0, f) {
     const M = { fo: M0.orders.filter(o => orderPass(o, f)), fs: M0.sales.filter(s => salePass(s, f)) };
     const g = f.grain, yb = f.ybasis, end = M0.dataEnd;
@@ -640,7 +660,7 @@ const Engine = (() => {
     const N = { W: 13, M: 12, Q: 8, H: 6, Y: 12 }[g];
     let starts = []; let s = start; for (let k = 0; k < N; k++) { starts.unshift(s); s = prevStart(s, g, yb); if (!okFrom(s)) break; }
     const trend = starts.map(p => {
-      const w = windowFor(p, g, lyStart(p, g, yb), end);
+      const w = windowFor(p, g, f.cmp === 'PREV' ? prevStart(p, g, yb) : lyStart(p, g, yb), end);
       const c = measures(M, f, w.cur), l = okFrom(w.cmp[0]) ? measures(M, f, w.cmp) : null;
       return { start: p, label: label(p, g, yb, true), full: label(p, g, yb), partial: w.partial, net: c.net, netLY: l && l.net, intake: c.intake, intakeLY: l && l.intake,
         qtyR: c.qtyR, qtyB: c.qtyB, qtyRLY: l && l.qtyR, qtyBLY: l && l.qtyB, otd: c.otd, otdN: c.otdN, rateR: c.rateR, rateB: c.rateB };
@@ -689,7 +709,7 @@ const Engine = (() => {
       trendCut: starts.length < N && starts[0] > periodStart(M0.dataStart, g, yb) };
   }
 
-  return { decodePayload, rowsFromAoA, cleanRows, build, analyse, periodStart, periodEnd, prevStart, lyStart, label, periodsBetween, windowFor, SUBCATS, DAY, parseDate, num, ymd };
+  return { decodePayload, rowsFromAoA, cleanRows, build, analyse, seasonality, periodStart, periodEnd, prevStart, lyStart, label, periodsBetween, windowFor, SUBCATS, DAY, parseDate, num, ymd };
 })();
 if (typeof module !== 'undefined') module.exports = Engine;
 
@@ -700,7 +720,7 @@ if (typeof module !== 'undefined') module.exports = Engine;
   const HIST = JSON.parse(document.getElementById('hist').textContent);
   const E = Engine;
   let RAW = null, M = null, CUR = null;
-  const F = { cat: 'ALL', sub: 'ALL', cust: 'ALL', sp: 'ALL', scope: 'CUSTOMER', grain: 'M', ybasis: 1, cmp: 'LY', period: null, measure: 'net' };
+  const F = { cat: 'ALL', sub: 'ALL', cust: 'ALL', sp: 'ALL', scope: 'CUSTOMER', grain: 'M', ybasis: 4, cmp: 'PREV', period: null, measure: 'net' };
   let TAB = 'overview';
 
   // ---------- formatting ----------
@@ -765,7 +785,7 @@ if (typeof module !== 'undefined') module.exports = Engine;
     M = E.build(raw);
     buildFilterOptions();
     F.period = E.periodStart(M.dataEnd, F.grain, F.ybasis);
-    buildPeriodOptions();
+    buildPeriodOptions(); syncControls();
     renderAll();
     if (label) toast(label);
   }
@@ -820,6 +840,15 @@ if (typeof module !== 'undefined') module.exports = Engine;
       $$('#' + id + ' button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
       F[key] = b.dataset.v; cb && cb(); render();
     }));
+  }
+  // the Compare wording follows the chosen grain; the Year basis only matters for quarter / half-year / year
+  function syncControls() {
+    const gn = { W: 'week', M: 'month', Q: 'quarter', H: 'half-year', Y: 'year' }[F.grain];
+    const opts = $('#f-cmp').options;
+    opts[0].text = 'vs previous ' + gn; opts[1].text = 'vs same ' + gn + ' last year';
+    const fyRelevant = ['Q', 'H', 'Y'].includes(F.grain);
+    const yb = $('#f-yb'); yb.closest('.sel').dataset.disabled = String(!fyRelevant);
+    yb.title = fyRelevant ? 'Quarters, half-years and years start in April (FY) or January' : 'Only used for quarter, half-year and year views';
   }
   function setSeg(id, v) { $$('#' + id + ' button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === v))); }
   function buildFilterOptions() {
@@ -941,7 +970,7 @@ if (typeof module !== 'undefined') module.exports = Engine;
       const s2 = document.createElement('span'); s2.textContent = t.s; d.appendChild(s2);
       k.appendChild(el);
     }
-    renderTrend(); renderMix(); renderTop();
+    renderTrend(); renderSeason(); renderMix(); renderTop();
   }
   function hexA(hex, a) { const h = hex.replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(x => x + x).join('') : h, 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
 
@@ -967,6 +996,7 @@ if (typeof module !== 'undefined') module.exports = Engine;
   function renderTrend() {
     const tr = CUR.trend, g = F.grain, mz = F.measure;
     const gname = { W: 'week', M: 'month', Q: 'quarter', H: 'half-year', Y: 'year' }[g];
+    const cmpName = F.cmp === 'PREV' ? 'Previous ' + gname : 'Same ' + gname + ' last year';
     const qtyBlocked = mz === 'qty' && F.cat === 'ALL';
     let cur, ly, unit, title;
     const L = v => (v === null || v === undefined) ? null : v / 1e5;
@@ -978,18 +1008,49 @@ if (typeof module !== 'undefined') module.exports = Engine;
     const lg = $('#trend-legend'); lg.innerHTML = '';
     if (qtyBlocked) { noData('c-trend', 'Yards and pieces are never added together. Pick Ribbons or Bows to chart quantity.'); $('#trend-note').textContent = ''; return; }
     clearNoData('c-trend');
-    lg.innerHTML = '<span><i class="box" style="background:var(--s1)"></i>' + (g === 'Y' ? 'Year' : 'This ' + gname) + '</span><span><i style="background:var(--ink-2)"></i>Same ' + gname + ' last year</span>';
+    lg.innerHTML = '<span><i class="box" style="background:var(--s1)"></i>' + (g === 'Y' ? 'Year' : 'This ' + gname) + '</span><span><i style="background:var(--ink-2)"></i>' + cmpName + '</span>';
     const x = tr.map(t => t.label + (t.partial ? ' ▸' : ''));
     const data = [
       { x, y: cur, type: 'bar', name: 'This ' + gname, marker: { color: tr.map(t => t.partial ? hexA(css('--s1'), .55) : css('--s1')), cornerradius: 4 },
         customdata: tr.map(t => t.full + (t.partial ? ' (to date)' : '')), hovertemplate: '<b>%{y:,.1f}</b> ' + unit + '<br>%{customdata}<extra></extra>' },
-      { x, y: ly, type: 'scatter', mode: 'lines+markers', name: 'Last year', line: { color: css('--ink-2'), width: 2 }, marker: { size: 8, color: css('--ink-2'), line: { color: css('--surface'), width: 2 } },
-        hovertemplate: 'Last year: <b>%{y:,.1f}</b> ' + unit + '<extra></extra>', connectgaps: false }
+      { x, y: ly, type: 'scatter', mode: 'lines+markers', name: cmpName, line: { color: css('--ink-2'), width: 2 }, marker: { size: 8, color: css('--ink-2'), line: { color: css('--surface'), width: 2 } },
+        hovertemplate: cmpName + ': <b>%{y:,.1f}</b> ' + unit + '<extra></extra>', connectgaps: false }
     ];
     plot('c-trend', data, { hovermode: 'x unified', xaxis: catX(), yaxis: { title: { text: unit, font: { size: 11 } }, gridcolor: css('--grid'), tickfont: { color: css('--muted') }, rangemode: 'tozero', zeroline: false, automargin: true } });
     const last = tr[tr.length - 1];
-    $('#trend-note').textContent = (last.partial ? '▸ ' + last.full + ' is still running – bar is lighter and last year is cut at the same day. ' : '')
+    $('#trend-note').textContent = (last.partial ? '▸ ' + last.full + ' is still running – bar is lighter and the comparison is cut at the same day. ' : '')
       + (CUR.trendCut || ly.some(v => v === null) ? 'Sales history is complete from ' + fmtD(M.reliableFrom) + ', so earlier periods and their comparisons are left out. ' : '') + 'Hover a bar for exact values.';
+  }
+
+  function renderSeason() {
+    const mz = F.measure === 'intake' ? 'intake' : 'net';
+    const rows = E.seasonality(M, F), MNm = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const order = [3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 1, 2];
+    const L = v => (v === null || v === undefined) ? null : v / 1e5;
+    const byFY = new Map();
+    for (const r of rows) { const fy = r.m >= 3 ? r.y : r.y - 1; if (!byFY.has(fy)) byFY.set(fy, new Map()); byFY.get(fy).set(r.m, r[mz]); }
+    const fyName = y => 'FY' + String(y % 100).padStart(2, '0') + '-' + String((y + 1) % 100).padStart(2, '0');
+    const fys = [...byFY.keys()].sort();
+    const unit = '₹ lakh', what = mz === 'intake' ? 'Orders received' : 'Net sales';
+    $('#sea-title').textContent = what + ' by month of the financial year';
+    $('#sea-sub').textContent = scopeTxt() + ' · ' + unit + ' · complete months only';
+    const cols = [css('--ink-2'), css('--s1')];
+    const data = fys.map((fy, i) => ({ x: order.map(m => MNm[m]), y: order.map(m => byFY.get(fy).has(m) ? L(byFY.get(fy).get(m)) : null), type: 'bar', name: fyName(fy),
+      marker: { color: fys.length === 1 ? css('--s1') : cols[Math.min(i + (2 - fys.length), 1)], cornerradius: 3 }, hovertemplate: fyName(fy) + ' %{x}: <b>%{y:,.1f}</b> ' + unit + '<extra></extra>' }));
+    $('#sea-legend').innerHTML = fys.map((fy, i) => '<span><i class="box" style="background:' + (fys.length === 1 ? css('--s1') : cols[Math.min(i + (2 - fys.length), 1)]) + '"></i>' + fyName(fy) + '</span>').join('');
+    if (!data.length) { noData('c-season', 'No complete months in the history yet.'); $('#sea-note').textContent = ''; return; }
+    clearNoData('c-season');
+    plot('c-season', data, { barmode: 'group', hovermode: 'x unified', xaxis: catX(), yaxis: { title: { text: unit, font: { size: 11 } }, gridcolor: css('--grid'), tickfont: { color: css('--muted') }, rangemode: 'tozero', zeroline: false, automargin: true } });
+    const parts = [];
+    for (const fy of fys) {
+      const mm = byFY.get(fy); if (mm.size < 12) continue;
+      const arr = [...mm.entries()].filter(e => e[1] !== null);
+      const hi = arr.reduce((a, b) => b[1] > a[1] ? b : a), lo = arr.reduce((a, b) => b[1] < a[1] ? b : a);
+      const q = [0, 1, 2, 3].map(k => order.slice(k * 3, k * 3 + 3).reduce((s, m) => s + (mm.get(m) || 0), 0));
+      const qi = q.indexOf(Math.max(...q)), qj = q.indexOf(Math.min(...q));
+      parts.push(fyName(fy) + ': highest ' + MNm[hi[0]] + ' (' + inr(hi[1]) + '), lowest ' + MNm[lo[0]] + ' (' + inr(lo[1]) + '); strongest quarter Q' + (qi + 1) + ', weakest Q' + (qj + 1) + '.');
+    }
+    $('#sea-note').textContent = (parts.length ? parts.join(' ') + ' ' : '') + 'The history has ' + (parts.length ? 'one full year' : 'less than one full year') + ', so this shows what happened, not a proven seasonal pattern. Large one-off orders move single months.';
   }
 
   function renderMix() {
@@ -1173,7 +1234,7 @@ if (typeof module !== 'undefined') module.exports = Engine;
 
   // ---------- controls ----------
   segInit('f-cat', 'cat', () => { F.sub = 'ALL'; buildFilterOptions(); if (F.measure === 'qty' && F.cat === 'ALL') { } });
-  segInit('f-grain', 'grain', () => { F.period = E.periodStart(M.dataEnd, F.grain, F.ybasis); buildPeriodOptions(); });
+  segInit('f-grain', 'grain', () => { F.period = E.periodStart(M.dataEnd, F.grain, F.ybasis); buildPeriodOptions(); syncControls(); });
   segInit('f-measure', 'measure');
   $('#f-sub').addEventListener('change', e => { F.sub = e.target.value; render(); });
   $('#f-cust').addEventListener('change', e => { F.cust = e.target.value; render(); });

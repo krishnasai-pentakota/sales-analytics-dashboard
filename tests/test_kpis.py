@@ -112,3 +112,18 @@ def test_fixture_is_current_with_the_dashboard_engine():
     """The committed fixture must equal a fresh run of the engine embedded in dashboard/index.html."""
     out = subprocess.run(["node", str(ROOT / "src" / "engine_reference.js")], capture_output=True, text=True, check=True).stdout
     assert json.loads(out) == FIXTURE
+
+
+def test_trend_follows_the_compare_choice():
+    """With 'vs previous period' each bar's comparison is the bar before it (it used to be last year regardless)."""
+    t = FIXTURE["prev_trend"]
+    assert t["last_comparison"] == pytest.approx(t["previous_bar_net"], abs=0.01)
+
+
+def test_seasonality_months_match_python_reference(model):
+    """Every complete month the seasonality chart draws equals the Python net sales for that month."""
+    season = FIXTURE["season"]
+    assert season[0]["y"] == 2025 and season[0]["m"] == 3        # starts at the first reliable month, April 2025
+    for r in season:
+        a, b = kpis.month_window(r["y"], r["m"] + 1)
+        assert kpis.net_sales(model, a, b) == pytest.approx(r["net"], abs=0.01)

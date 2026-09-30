@@ -50,5 +50,11 @@ Every figure below is computed from `data/processed/` by `python -m src.insights
 - **Interpretation:** totals are a floor, not the accounts-report figure; ratios and rankings are more robust than absolute levels.
 - **Action:** use the 1 Oct 2026 entry workbook as the single source and re-run the reconciliation monthly.
 
+## 9. No reliable peak or low season yet
+- **Finding:** the data shows no consistent peak or low season; one full financial year is not enough to claim one.
+- **Evidence (net sales, ₹ L):** FY25-26 by quarter: Apr–Jun 170.7, Jul–Sep 228.2, Oct–Dec 213.5, Jan–Mar 210.8; highest month Jul (83.1), lowest Apr (54.2). The months that repeat disagree: Apr–Jun 2026 was 280.3 vs 170.7 a year earlier (+64 %), then Jul–Sep 2026 is 201.1 vs 228.2 (−11.9 %). FY-to-date is still +20.7 %.
+- **Interpretation:** month-to-month swings here come mainly from a few large orders (insights 2 and 3), not from a calendar pattern. Indian festive and gifting months (roughly Sep–Nov), the wedding season and year-end could plausibly matter for ribbons and bows, but that is general market context, not something this dataset shows.
+- **Action:** keep the Seasonality card on the Overview tab; after Mar 2027 the second year will allow a real month-by-month comparison. Meanwhile ask the sales team which customers order ahead of festivals and check their order dates.
+
 ## What this data cannot answer
 Marketing ROI, lead conversion, margin, customer profitability, price elasticity. The dataset has no spend, lead, cost or channel fields.

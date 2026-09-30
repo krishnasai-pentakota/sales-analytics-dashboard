@@ -16,7 +16,7 @@ Add to the above: *why* it was built that way. The hard part was not charts; it 
 
 **How did you define net sales?** Invoiced goods value (quantity × rate × unit factor × FX × (1 − discount)) plus once-per-order charges, customer orders only, excluding GST and freight. `docs/metric_dictionary.md`.
 
-**How do you know the numbers are right?** Three layers: 32 tests (including Python-vs-JavaScript parity), a validation report with identities (customer totals sum to the grand total, net = goods + charges), and a reconciliation to the accounts report. The reconciliation shows 80 % coverage, so I say the totals are a floor.
+**How do you know the numbers are right?** Three layers: 34 tests (including Python-vs-JavaScript parity), a validation report with identities (customer totals sum to the grand total, net = goods + charges), and a reconciliation to the accounts report. The reconciliation shows 80 % coverage, so I say the totals are a floor.
 
 **Why is coverage only 80 %?** The history was rebuilt from dispatch reports, and invoices on 2024 orders are not in them. I did not patch it with estimates. From 1 Oct 2026 the entry workbook is the single source.
 

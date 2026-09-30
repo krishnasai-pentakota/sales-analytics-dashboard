@@ -1,6 +1,6 @@
 # Sales Analytics Dashboard — Order-to-Cash
 
-![Python](https://img.shields.io/badge/python-3.11-blue) ![Tests](https://img.shields.io/badge/tests-32%20passing-brightgreen) ![Data](https://img.shields.io/badge/data-real%2C%20anonymised-lightgrey) ![License](https://img.shields.io/badge/license-MIT-informational)
+![Python](https://img.shields.io/badge/python-3.11-blue) ![Tests](https://img.shields.io/badge/tests-34%20passing-brightgreen) ![Data](https://img.shields.io/badge/data-real%2C%20anonymised-lightgrey) ![License](https://img.shields.io/badge/license-MIT-informational)
 
 **One trusted view of orders, sales, open book and delivery for a B2B ribbon & bow manufacturer — built from three disagreeing Excel sources, with every KPI defined, tested and reconciled to the accounts report.**
 
@@ -61,7 +61,7 @@ flowchart LR
   B --> C[("data/processed<br/>CSV")]
   C --> D["build_dashboard.py"] --> E["dashboard/index.html<br/>JS engine + Plotly"]
   C --> F["src/kpis.py<br/>Python reference"]
-  F --> G["pytest<br/>32 tests"]
+  F --> G["pytest<br/>34 tests"]
   E -. "parity check via Node" .-> G
   C --> H["src/validate.py<br/>validation report"]
   C --> I["src/insights.py<br/>insight facts"]
@@ -103,7 +103,7 @@ tests/       test_kpis.py · fixtures/engine_reference.json
 python -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-python -m pytest -q tests            # 32 tests (engine parity runs if Node.js is installed)
+python -m pytest -q tests            # 34 tests (engine parity runs if Node.js is installed)
 python -m src.validate               # rewrites docs/validation_report.md
 python -m src.insights               # prints the facts behind docs/business_insights.md
 python src/build_dashboard.py        # rebuilds dashboard/index.html from data/processed
@@ -111,7 +111,7 @@ python src/build_dashboard.py        # rebuilds dashboard/index.html from data/p
 Then open `dashboard/index.html` (needs internet once for the Plotly / SheetJS CDN scripts). Screenshots: `python src/make_screenshots.py --plotly <path to plotly.min.js> --chromium <path to chrome>` after `playwright install chromium`.
 
 ## Validation
-32 passing tests and a [validation report](docs/validation_report.md): completeness, validity, uniqueness, integrity, calculation identities and a monthly reconciliation to the accounts report. Key results: 0 unmatched invoice lines; customer totals add up to the grand total; 579 order lines (2.9 %) cannot be valued; committed date missing on 53 %.
+34 passing tests and a [validation report](docs/validation_report.md): completeness, validity, uniqueness, integrity, calculation identities and a monthly reconciliation to the accounts report. Key results: 0 unmatched invoice lines; customer totals add up to the grand total; 579 order lines (2.9 %) cannot be valued; committed date missing on 53 %.
 
 ## Business value
 A single, documented definition of each number; early sight of customer concentration and of drop-off at a top account; a visible open book and overdue list; and an honest statement of what the data does and does not cover.

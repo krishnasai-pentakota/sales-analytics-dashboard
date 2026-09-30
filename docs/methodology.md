@@ -31,7 +31,7 @@ Definitions in [`metric_dictionary.md`](metric_dictionary.md). Implemented twice
 
 ## 5. Validation
 - `python -m src.validate` → [`validation_report.md`](validation_report.md): completeness, validity, uniqueness, integrity, calculation identities, reconciliation.
-- `pytest` → 32 tests, including **parity between the Python and JavaScript engines** on net sales, orders, OTD, open book and book-to-bill across seven filter cases.
+- `pytest` → 34 tests, including **parity between the Python and JavaScript engines** on net sales, orders, OTD, open book and book-to-bill across seven filter cases.
 
 ## 6. Reconciliation result
 Dashboard vs accounts report, Jan–Aug 2026: ₹6.21 Cr vs ₹7.81 Cr (**80 %**), monthly coverage 69–91 %. Earlier 2025 months are lower because invoices on 2024 orders are absent from the dispatch reports; comparisons therefore start in April 2025.
