@@ -1,0 +1,1203 @@
+<title>Sales Analytics Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&family=Marcellus&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout: black-and-gold band on top, one compact filter row, then answer-first cards on a warm white page. */
+:root{
+  --bg:#f8f7f4; --surface:#ffffff; --surface-2:#f3f1ec; --ink:#1a1916; --ink-2:#4f4b44; --muted:#857f75;
+  --line:#e6e1d7; --grid:#ede9e1; --gold:#cf9530; --gold-ink:#8d6015; --gold-soft:#f5ead3;
+  --band:#151412; --band-2:#221f1b; --band-ink:#f4efe4; --band-muted:#b9b0a0;
+  --s1:#2f4a9e; --s2:#cf9530; --s3:#1f8a70; --ghost:#b9b3a8; --div-pos:#2f4a9e; --div-neg:#b0452a;
+  --good:#0a7d24; --crit:#c2312f; --warn:#b57600;
+  --seq-0:#eef1fa; --seq-1:#2f4a9e;
+  --font:'Assistant', 'Segoe UI', system-ui, -apple-system, sans-serif; --display:'Marcellus', 'Palatino Linotype', Georgia, serif;
+  --r:10px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#12110f; --surface:#1b1a18; --surface-2:#23211e; --ink:#f3efe6; --ink-2:#cdc6b8; --muted:#948c7e;
+  --line:#2f2c28; --grid:#2a2724; --gold:#d6a24a; --gold-ink:#e7bb70; --gold-soft:#3a2f1b;
+  --band:#0b0a09; --band-2:#171512; --band-ink:#f4efe4; --band-muted:#a89f90;
+  --s1:#6479dc; --s2:#be8a2e; --s3:#2d9c7f; --ghost:#5d5850; --div-pos:#6479dc; --div-neg:#d0674a;
+  --good:#34c05a; --crit:#f06a67; --warn:#e3a53a; --seq-0:#23262f; --seq-1:#8196e8; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#12110f; --surface:#1b1a18; --surface-2:#23211e; --ink:#f3efe6; --ink-2:#cdc6b8; --muted:#948c7e;
+  --line:#2f2c28; --grid:#2a2724; --gold:#d6a24a; --gold-ink:#e7bb70; --gold-soft:#3a2f1b;
+  --band:#0b0a09; --band-2:#171512; --band-ink:#f4efe4; --band-muted:#a89f90;
+  --s1:#6479dc; --s2:#be8a2e; --s3:#2d9c7f; --ghost:#5d5850; --div-pos:#6479dc; --div-neg:#d0674a;
+  --good:#34c05a; --crit:#f06a67; --warn:#e3a53a; --seq-0:#23262f; --seq-1:#8196e8; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg); color:var(--ink); font-family:var(--font); font-size:14px; line-height:1.45; margin:0}
+button,select,input{font-family:inherit; font-size:13px; color:var(--ink)}
+.wrap{max-width:1440px; margin:0 auto; padding-inline:16px}
+/* brand band */
+.band{background:linear-gradient(180deg,var(--band),var(--band-2)); color:var(--band-ink); position:relative; overflow:hidden}
+.band .wrap{display:flex; align-items:center; justify-content:space-between; gap:16px; padding-block:14px; flex-wrap:wrap}
+.ribbon-line{position:absolute; left:0; right:0; bottom:0; height:3px; background:linear-gradient(90deg,transparent,var(--gold) 20%,#e7bb70 50%,var(--gold) 80%,transparent)}
+.brand{display:flex; align-items:center; gap:14px; min-width:0}
+.mark{width:42px; height:42px; flex:none}
+.wordmark{font-family:var(--display); font-size:22px; letter-spacing:.14em; color:#e7bb70; line-height:1.1; white-space:nowrap}
+.tag{font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--band-muted); margin-top:3px}
+.band-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.chip{display:inline-flex; align-items:center; gap:6px; border:1px solid rgba(231,187,112,.35); color:var(--band-ink); border-radius:999px; padding:4px 10px; font-size:12px; white-space:nowrap}
+.chip .dot{width:7px; height:7px; border-radius:50%; background:#e7bb70}
+.btn{border:1px solid var(--line); background:var(--surface); border-radius:8px; padding:6px 12px; cursor:pointer; font-weight:600}
+.btn:hover{border-color:var(--gold)}
+.btn:focus-visible,.seg button:focus-visible,select:focus-visible,.tab:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+.btn-gold{background:#e7bb70; color:#1a1916; border-color:#e7bb70}
+.btn-ghost-band{background:transparent; color:var(--band-ink); border-color:rgba(231,187,112,.45)}
+/* filters */
+.filters{position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:color-mix(in srgb,var(--bg) 92%,transparent); backdrop-filter:blur(6px); border-bottom:1px solid var(--line)}
+.filters .wrap{display:flex; flex-wrap:wrap; gap:8px 8px; align-items:center; padding-block:8px}
+.seg{display:inline-flex; border:1px solid var(--line); border-radius:8px; background:var(--surface); overflow:hidden}
+.seg button{border:0; background:transparent; padding:6px 8px; cursor:pointer; font-weight:600; color:var(--ink-2); border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--gold-soft); color:var(--ink); box-shadow:inset 0 -2px 0 var(--gold)}
+.sel{position:relative; display:inline-flex; flex-direction:column}
+.sel label{position:absolute; top:-7px; left:8px; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); background:var(--bg); padding:0 4px; line-height:1.2; pointer-events:none}
+.sel select{appearance:none; border:1px solid var(--line); background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23857f75'/%3E%3C/svg%3E") no-repeat right 9px center; border-radius:8px; padding:7px 22px 6px 8px; max-width:170px; cursor:pointer}
+.divider{width:1px; height:24px; background:var(--line)}
+/* tabs */
+.tabs{display:flex; gap:4px; overflow-x:auto; padding-block:12px 4px; scrollbar-width:none}
+.tab{border:0; background:transparent; padding:7px 14px; border-radius:999px; font-weight:700; color:var(--muted); cursor:pointer; white-space:nowrap}
+.tab[aria-selected="true"]{background:var(--ink); color:var(--bg)}
+main{padding-block:6px 40px}
+.grid{display:grid; gap:14px}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; min-width:0}
+.card h2{font-size:15px; margin:0; font-weight:700; letter-spacing:.01em; text-wrap:balance}
+.card .sub{color:var(--muted); font-size:12px; margin-top:2px}
+.card-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+.eyebrow{font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold-ink); font-weight:700}
+/* hero */
+.hero{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr); gap:14px}
+.hero-card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; position:relative; overflow:hidden}
+.hero-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--gold)}
+.hero-val{font-size:48px; font-weight:800; letter-spacing:-.01em; line-height:1.05; margin-top:6px}
+.hero-meta{display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin-top:8px; color:var(--ink-2)}
+.delta{display:inline-flex; align-items:center; gap:4px; font-weight:700; font-size:13px; padding:2px 8px; border-radius:999px; border:1px solid currentColor}
+.delta.up{color:var(--good)} .delta.down{color:var(--crit)} .delta.flat{color:var(--muted)}
+.ytd{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 16px; margin-top:14px; border-top:1px solid var(--line); padding-top:12px}
+.ytd .l{font-size:12px; color:var(--muted); font-weight:600}
+.ytd .v{font-size:20px; font-weight:800; margin-top:1px}
+.ytd .d{font-size:12px; color:var(--muted); margin-top:3px; display:flex; gap:6px; align-items:center; flex-wrap:wrap}
+.answers ol{margin:6px 0 0; padding-left:0; list-style:none; display:grid; gap:9px}
+.answers li{display:grid; grid-template-columns:22px 1fr; gap:8px; align-items:start; color:var(--ink-2)}
+.answers li b{color:var(--ink)}
+.qnum{width:22px; height:22px; border-radius:50%; background:var(--gold-soft); color:var(--gold-ink); font-weight:800; font-size:12px; display:grid; place-items:center}
+/* kpis */
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px}
+.kpi{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; min-width:0}
+.kpi .l{font-size:12px; color:var(--muted); font-weight:600}
+.kpi .v{font-size:24px; font-weight:800; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.kpi .v small{font-size:13px; font-weight:600; color:var(--ink-2)}
+.kpi .v2{font-size:13px; color:var(--ink-2); margin-top:1px}
+.kpi .d{margin-top:6px; font-size:12px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; color:var(--muted)}
+.two{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px}
+.chart{width:100%; height:320px}
+.chart.sm{height:260px}
+.note{font-size:12px; color:var(--muted); margin-top:6px}
+.subcards{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:10px}
+.subcard{border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:var(--surface-2); min-width:0}
+.subcard .n{display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--ink-2)}
+.subcard .sw{width:10px; height:10px; border-radius:3px; flex:none}
+.subcard .v{font-size:18px; font-weight:800; margin-top:3px}
+.subcard .x{font-size:12px; color:var(--muted)}
+/* tables */
+.tbl-wrap{overflow-x:auto}
+table.t{width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums}
+.t th{text-align:left; font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap}
+.t td{padding:8px 10px; border-bottom:1px solid var(--grid); white-space:nowrap}
+.t td.num,.t th.num{text-align:right}
+.t tr.unit td{color:var(--ink-2); font-size:12.5px; background:var(--surface-2)}
+.t tr.unit td:first-child{padding-left:28px}
+.bar-cell{position:relative; min-width:110px}
+.bar-cell span{position:absolute; left:10px; top:50%; height:8px; transform:translateY(-50%); border-radius:0 4px 4px 0; background:var(--s1); opacity:.85}
+.pill{display:inline-block; padding:1px 8px; border-radius:999px; font-size:11.5px; font-weight:700; border:1px solid var(--line)}
+.pill.up{color:var(--good)} .pill.down{color:var(--crit)}
+/* empty + data */
+.empty{padding:48px 20px; text-align:center; border:1px dashed var(--line); border-radius:var(--r); background:var(--surface)}
+.empty h3{margin:0 0 6px; font-size:18px}
+.drop{border:1.5px dashed var(--gold); border-radius:var(--r); padding:18px; background:var(--gold-soft); display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between}
+.toast{position:fixed; left:50%; bottom:calc(18px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:9px 16px; border-radius:999px; font-weight:600; font-size:13px; z-index:50; max-width:calc(100% - 32px)}
+dl.defs{display:grid; grid-template-columns:minmax(140px,220px) 1fr; gap:8px 16px; margin:0}
+dl.defs dt{font-weight:700} dl.defs dd{margin:0; color:var(--ink-2)}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--ink-2)}
+.legend i{display:inline-block; width:14px; height:3px; border-radius:2px; vertical-align:middle; margin-right:5px}
+.legend i.box{height:10px; width:10px; border-radius:3px}
+.muted{color:var(--muted)}
+[data-disabled="true"]{opacity:.45; pointer-events:none}
+@media (max-width:980px){ .hero,.two{grid-template-columns:minmax(0,1fr)} .hero-val{font-size:40px} }
+@media (max-width:560px){ .filters{position:static} .wordmark{font-size:17px; letter-spacing:.1em} .tag{letter-spacing:.12em} .hero-val{font-size:34px} .sel select{max-width:160px} .kpi .v{font-size:21px} dl.defs{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){ *{transition:none!important; animation:none!important} }
+</style>
+
+<header class="band">
+  <div class="wrap">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="24" cy="24" r="22" fill="none" stroke="#e7bb70" stroke-width="1.5"/>
+        <path d="M24 22 C 16 10, 8 12, 9 20 C 10 27, 18 26, 24 22 Z" fill="#cf9530"/>
+        <path d="M24 22 C 32 10, 40 12, 39 20 C 38 27, 30 26, 24 22 Z" fill="#e7bb70"/>
+        <path d="M22 23 L 15 38 L 20 36 L 22 40 L 25 24 Z" fill="#b87b22"/>
+        <path d="M26 23 L 33 38 L 28 36 L 26 40 L 23 24 Z" fill="#cf9530"/>
+        <rect x="21" y="19.5" width="6" height="6" rx="1.5" fill="#8d6015"/>
+      </svg>
+      <div style="min-width:0">
+        <div class="wordmark">SALES ANALYTICS</div>
+        <div class="tag">Order-to-cash · ribbon &amp; bow manufacturer</div>
+      </div>
+    </div>
+    <div class="band-right">
+      <span class="chip" id="data-chip"><span class="dot"></span><span id="data-chip-text">Loading…</span></span>
+      <button class="btn btn-ghost-band" id="btn-data" type="button">Load / reset data</button>
+    </div>
+  </div>
+  <div class="ribbon-line"></div>
+</header>
+
+<div class="filters" id="filters">
+  <div class="wrap">
+    <div class="seg" role="group" aria-label="Category" id="f-cat">
+      <button type="button" data-v="ALL" aria-pressed="true">All</button>
+      <button type="button" data-v="RIBBON" aria-pressed="false">Ribbons</button>
+      <button type="button" data-v="BOW" aria-pressed="false">Bows</button>
+    </div>
+    <div class="sel"><label for="f-sub">Type</label><select id="f-sub"></select></div>
+    <div class="sel"><label for="f-cust">Customer</label><select id="f-cust"></select></div>
+    <div class="sel"><label for="f-sp">Sales person</label><select id="f-sp"></select></div>
+    <div class="sel"><label for="f-scope">Orders</label><select id="f-scope"><option value="CUSTOMER">Customers only</option><option value="ALL">Incl. HQ / stock</option></select></div>
+    <span class="divider" aria-hidden="true"></span>
+    <div class="seg" role="group" aria-label="Group by" id="f-grain">
+      <button type="button" data-v="W" aria-pressed="false" title="Week">Week</button>
+      <button type="button" data-v="M" aria-pressed="true" title="Month">Month</button>
+      <button type="button" data-v="Q" aria-pressed="false" title="Quarter">Qtr</button>
+      <button type="button" data-v="H" aria-pressed="false" title="Half-year">Half</button>
+      <button type="button" data-v="Y" aria-pressed="false" title="Year">Year</button>
+    </div>
+    <div class="sel"><label for="f-period">Period</label><select id="f-period"></select></div>
+    <div class="sel"><label for="f-cmp">Compare</label><select id="f-cmp"><option value="LY">vs last year</option><option value="PREV">vs previous period</option></select></div>
+    <div class="sel"><label for="f-yb">Year</label><select id="f-yb"><option value="1">Jan–Dec</option><option value="4">FY Apr–Mar</option></select></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" aria-selected="true" data-tab="overview" id="tab-overview">Overview</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="customers" id="tab-customers">Customers</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="products" id="tab-products">Products</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="delivery" id="tab-delivery">Orders &amp; delivery</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="data" id="tab-data">Data</button>
+  </nav>
+  <main>
+    <!-- OVERVIEW -->
+    <section id="p-overview" class="grid" role="tabpanel" aria-labelledby="tab-overview">
+      <div id="empty-overview" class="empty" hidden>
+        <h3>No data loaded</h3>
+        <p class="muted">Load the entry file (Orders_and_Sales_Entry_from_01Oct2026.xlsx) or CSVs saved from its ORDERS and SALES sheets.</p>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px">
+          <button class="btn btn-gold" type="button" data-action="pick">Load file…</button>
+          <button class="btn" type="button" data-action="restore">Restore history</button>
+        </div>
+      </div>
+      <div id="ov-body" class="grid">
+        <div class="hero">
+          <div class="hero-card">
+            <div class="eyebrow" id="hero-eyebrow">Net sales</div>
+            <div class="hero-val" id="hero-val">—</div>
+            <div class="hero-meta"><span id="hero-delta"></span><span id="hero-cmp"></span></div>
+            <div id="hero-spark" style="height:64px; margin-top:8px"></div>
+            <div class="note" id="hero-note"></div>
+            <div class="ytd" id="hero-ytd"></div>
+          </div>
+          <div class="card answers">
+            <div class="eyebrow">Answers for this selection</div>
+            <ol id="answers"></ol>
+          </div>
+        </div>
+        <div class="kpis" id="kpis"></div>
+        <div class="card">
+          <div class="card-head">
+            <div><h2 id="trend-title">Net sales by month</h2><div class="sub" id="trend-sub"></div></div>
+            <div class="seg" role="group" aria-label="Measure" id="f-measure">
+              <button type="button" data-v="net" aria-pressed="true">Sales ₹</button>
+              <button type="button" data-v="intake" aria-pressed="false">Orders ₹</button>
+              <button type="button" data-v="qty" aria-pressed="false">Quantity</button>
+            </div>
+          </div>
+          <div class="legend" id="trend-legend"></div>
+          <div id="c-trend" class="chart" data-h="330"></div>
+          <div class="note" id="trend-note"></div>
+        </div>
+        <div class="two">
+          <div class="card">
+            <div class="card-head"><div><h2 id="mix-title">Where sales came from</h2><div class="sub" id="mix-sub"></div></div></div>
+            <div class="subcards" id="mix-cards"></div>
+            <div id="c-mix" class="chart sm"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><h2>Top customers</h2><div class="sub" id="top-sub"></div></div></div>
+            <div class="legend"><span><i class="box" style="background:var(--s1)"></i>This period</span><span><i style="background:var(--ink-2);height:10px;width:3px"></i>Comparison</span></div>
+            <div id="c-top" class="chart" data-h="340"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CUSTOMERS -->
+    <section id="p-customers" class="grid" role="tabpanel" aria-labelledby="tab-customers" hidden>
+      <div class="card">
+        <div class="card-head"><div><h2>Customer sales</h2><div class="sub" id="cust-sub"></div></div></div>
+        <div class="tbl-wrap"><table class="t" id="cust-table"></table></div>
+        <div class="note">A customer with several accounts is reported as one customer; its accounts (for example Unit A and Unit B) are shown underneath.</div>
+      </div>
+      <div class="two">
+        <div class="card">
+          <div class="card-head"><div><h2>Biggest changes</h2><div class="sub" id="movers-sub"></div></div></div>
+          <div class="legend"><span><i class="box" style="background:var(--div-pos)"></i>Up</span><span><i class="box" style="background:var(--div-neg)"></i>Down</span></div>
+          <div id="c-movers" class="chart" data-h="400"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h2>Top customers × month</h2><div class="sub">Net sales, last 12 months, ₹ lakh</div></div></div>
+          <div id="c-heat" class="chart" data-h="400"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Sales people</h2><div class="sub" id="sp-sub"></div></div></div>
+        <div class="tbl-wrap"><table class="t" id="sp-table"></table></div>
+      </div>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="p-products" class="grid" role="tabpanel" aria-labelledby="tab-products" hidden>
+      <div class="card">
+        <div class="card-head"><div><h2>Sub-categories</h2><div class="sub" id="sub-sub"></div></div></div>
+        <div class="subcards" id="sub-cards"></div>
+        <div class="legend" id="sub-legend"></div>
+        <div id="c-subtrend" class="chart"></div>
+      </div>
+      <div class="two">
+        <div class="card" id="card-width">
+          <div class="card-head"><div><h2>Ribbon widths</h2><div class="sub">Yards dispatched in the period, top 10 widths</div></div></div>
+          <div id="c-width" class="chart sm"></div>
+        </div>
+        <div class="card" id="card-style">
+          <div class="card-head"><div><h2>Bow styles</h2><div class="sub">Pieces dispatched in the period, top 10 styles</div></div></div>
+          <div id="c-style" class="chart sm"></div>
+        </div>
+        <div class="card" id="card-rateR">
+          <div class="card-head"><div><h2>Average ribbon rate</h2><div class="sub">₹ per yard realised (goods value ÷ yards invoiced)</div></div></div>
+          <div id="c-rateR" class="chart sm"></div>
+        </div>
+        <div class="card" id="card-rateB">
+          <div class="card-head"><div><h2>Average bow rate</h2><div class="sub">₹ per piece realised (goods value ÷ pieces invoiced)</div></div></div>
+          <div id="c-rateB" class="chart sm"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DELIVERY -->
+    <section id="p-delivery" class="grid" role="tabpanel" aria-labelledby="tab-delivery" hidden>
+      <div class="kpis" id="del-kpis"></div>
+      <div class="two">
+        <div class="card">
+          <div class="card-head"><div><h2>Open order book by age</h2><div class="sub">Balance value of OPEN and PARTIAL lines, days since PO date, ₹ lakh</div></div></div>
+          <div class="legend"><span><i class="box" style="background:var(--s1)"></i>On time</span><span><i class="box" style="background:var(--div-neg)"></i>Past promised date</span></div>
+          <div id="c-age" class="chart sm"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h2>On-time delivery</h2><div class="sub" id="otd-sub">Lines completed by the committed date</div></div></div>
+          <div id="c-otd" class="chart sm"></div>
+        </div>
+      </div>
+      <div class="two">
+        <div class="card">
+          <div class="card-head"><div><h2>Where orders are supplied from</h2><div class="sub" id="sup-sub"></div></div></div>
+          <div id="c-supply" class="chart sm"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><div><h2>Largest overdue lines</h2><div class="sub">Open balance past the committed date</div></div></div>
+          <div class="tbl-wrap"><table class="t" id="overdue-table"></table></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATA -->
+    <section id="p-data" class="grid" role="tabpanel" aria-labelledby="tab-data" hidden>
+      <div class="drop" id="drop">
+        <div>
+          <div style="font-weight:800; font-size:15px">Load data</div>
+          <div class="muted" style="font-size:13px">The entry workbook (.xlsx) or CSVs saved from its ORDERS, SALES, CUSTOMERS and ITEMS sheets. Drop files here or pick them. Loaded rows replace rows with the same Order No and everything else stays, so the history plus this month's file adds up. To see only your file, Reset first.</div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap">
+          <input type="file" id="file-in" accept=".xlsx,.xlsm,.csv" multiple hidden>
+          <button class="btn btn-gold" type="button" data-action="pick">Load file…</button>
+          <button class="btn" type="button" data-action="restore">Restore history</button>
+          <button class="btn" type="button" id="btn-reset">Reset (empty)</button>
+        </div>
+      </div>
+      <div id="reset-confirm" class="card" hidden>
+        <b>Empty the dashboard?</b> All loaded data is cleared from this page (your files are not touched).
+        <div style="display:flex; gap:8px; margin-top:10px"><button class="btn" type="button" id="btn-reset-yes">Yes, empty it</button><button class="btn" type="button" id="btn-reset-no">Cancel</button></div>
+      </div>
+      <div class="two">
+        <div class="card">
+          <h2>What is loaded</h2>
+          <div class="tbl-wrap" style="margin-top:8px"><table class="t" id="data-table"></table></div>
+        </div>
+        <div class="card">
+          <h2>Check against the accounts report</h2>
+          <div class="sub">Monthly net sales: accounts product-wise sheet vs this dashboard (history only), ₹ lakh</div>
+          <div class="legend" style="margin-top:6px"><span><i class="box" style="background:var(--ghost)"></i>Accounts report</span><span><i class="box" style="background:var(--s1)"></i>Dashboard</span></div>
+          <div id="c-recon" class="chart sm"></div>
+          <div class="note" id="recon-note"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>How each number is worked out</h2>
+        <dl class="defs" style="margin-top:10px">
+          <dt>Net sales</dt><dd>SALES rows on a tax invoice or credit note for CUSTOMER orders: qty × rate × rate factor × FX × (1 − order discount), plus the order's DTM and screen charges once on its first invoice. Freight and GST are excluded. Dated by invoice date.</dd>
+          <dt>Orders (intake)</dt><dd>ORDERS lines by PO date, qty × rate used (typed rate, else the price list) after the order discount. Cancelled lines and double entries are excluded.</dd>
+          <dt>Quantity</dt><dd>Ribbons in yards and bows in pieces – never added together. With "All" selected, pick Ribbons or Bows to chart quantity.</dd>
+          <dt>Open order book</dt><dd>OPEN and PARTIAL lines today; value = order value × balance ÷ order qty. Overdue = committed date has passed.</dd>
+          <dt>On-time delivery</dt><dd>Lines that became COMPLETED in the period whose last dispatch was on or before the committed date, out of completed lines that have a committed date.</dd>
+          <dt>Book-to-bill</dt><dd>Orders ₹ ÷ net sales ₹ in the same period. Above 1 = order book growing.</dd>
+          <dt>Like-for-like</dt><dd>When the period is still running, the comparison period is cut at the same day (e.g. 1–29 Sep vs 1–29 Sep last year).</dd>
+          <dt>Customers</dt><dd>Reports roll up by customer. A customer with several accounts is reported as one customer, with its accounts shown underneath. Internal HQ transfers and inventory orders are excluded unless "Incl. HQ / stock" is chosen.</dd>
+        </dl>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script id="hist" type="application/json">/*__PAYLOAD__*/</script>
+<script>
+/* Sales engine: turns the ORDERS / SALES entry rows into one consistent model.
+   Mirrors the formulas in Orders_and_Sales_Entry_from_01Oct2026.xlsx, so every
+   number on the dashboard is the same number the entry file shows. */
+const Engine = (() => {
+  const DAY = 86400000;
+  const FACTOR = { 'PER YARD': 1, 'PER METRE': 0.9144, 'PER ROLL (25 YD)': 1 / 25, 'PER PIECE': 1, 'PER DOZEN': 1 / 12 };
+  const MON = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
+  const SUBCATS = { RIBBON: ['PLAIN RIBBON', 'PRINTED RIBBON', 'PACKED ROLL', 'TO CONFIRM'], BOW: ['HAND MADE BOW', 'MACHINE MADE BOW', 'TO CONFIRM'] };
+
+  // ---------- parsing helpers (loaded files can hold Date objects, Excel serials or text) ----------
+  function ymd(s) { const p = s.split('-').map(Number); return Date.UTC(p[0], p[1] - 1, p[2]); }
+  function parseDate(v) {
+    if (v === null || v === undefined || v === '') return null;
+    // Date objects: move to UTC wall-clock and round to the nearest day (spreadsheet readers can return 23:59:59 of the day before)
+    if (v instanceof Date) return isNaN(v) ? null : Math.round((v.getTime() - v.getTimezoneOffset() * 60000) / DAY) * DAY;
+    // Excel serial day numbers (the loader reads dates this way): the whole part is the day, any time of day is dropped
+    if (typeof v === 'number') { if (v > 20000 && v < 80000) return Date.UTC(1899, 11, 30) + Math.floor(v + 1e-6) * DAY; return null; }
+    const s = String(v).trim(); let m;
+    if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return Date.UTC(+m[1], +m[2] - 1, +m[3]);
+    if ((m = s.match(/^(\d{1,2})[-./](\d{1,2})[-./](\d{2,4})/))) { let y = +m[3], d = +m[1], mo = +m[2]; if (y < 100) y += 2000; if (mo > 12 && d <= 12) [d, mo] = [mo, d]; if (mo < 1 || mo > 12 || d < 1 || d > 31) return null; return Date.UTC(y, mo - 1, d); }
+    if ((m = s.match(/^(\d{1,2})[- ]([A-Za-z]{3})[a-z]*[- ](\d{2,4})$/))) { let y = +m[3]; if (y < 100) y += 2000; const mo = MON[m[2].toUpperCase()]; if (mo === undefined) return null; return Date.UTC(y, mo, +m[1]); }
+    return null;
+  }
+  function num(v) {
+    if (v === null || v === undefined || v === '') return null;
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+    let s = String(v).trim().replace(/[₹,\s]/g, ''); let pct = false;
+    if (s.endsWith('%')) { pct = true; s = s.slice(0, -1); }
+    if (s === '' || s === '-') return null;
+    const n = Number(s); if (!isFinite(n)) return null;
+    return pct ? n / 100 : n;
+  }
+  function str(v) { if (v === null || v === undefined) return null; const s = String(v).trim(); return s === '' ? null : s; }
+
+  function deriveItem(code) {
+    if (!code) return null;
+    const c = code.toUpperCase();
+    if (/^J?\d{5}-/.test(c)) {
+      const d = c.replace(/^J/, '')[0];
+      const pt = d === '2' ? 'PLAIN RIBBON' : (d === '3' || d === '4' || d === '6') ? 'PRINTED RIBBON' : d === '5' ? 'PACKED ROLL' : 'TO CONFIRM';
+      return { code: c, itype: 'RIBBON', ptype: pt, plr: null, runit: 'PER YARD', derived: true };
+    }
+    return { code: c, itype: 'BOW', ptype: 'TO CONFIRM', plr: null, runit: 'PER PIECE', derived: true };
+  }
+  function itemParts(code, itype) {
+    if (!code) return {};
+    if (itype === 'RIBBON') { const m = code.match(/^(J?\d{5})-(\d{2,3})-([A-Z]?\d{3}[A-Z]?)/); return m ? { quality: m[1], width: +m[2], colour: m[3] } : { quality: code.slice(0, 5) }; }
+    const b = code.match(/^((?:\d[A-Z]|[A-Z]{2})\d{2}[A-Z]{2})-/); if (b) return { style: b[1] };
+    const y = code.match(/^(Y[A-Z]\d{7,9})/); if (y) return { style: y[1] };
+    return { style: code.split('-')[0] };
+  }
+
+  // ---------- payload (embedded history) → raw rows ----------
+  function decodePayload(p) {
+    const col = (c, i) => (c && c.d) ? (c.i[i] >= 0 ? c.d[c.i[i]] : null) : (c ? c[i] : null);
+    const O = p.orders, S = p.sales, orders = [], sales = [];
+    for (let i = 0; i < O.qty.length; i++) orders.push({
+      po: O.po_date[i] ? ymd(O.po_date[i]) : null, acct: col(O.account, i), on: col(O.order_no, i), code: col(O.item, i), qty: O.qty[i], rate: O.rate[i],
+      ot: col(O.order_type, i), cdate: O.committed[i] ? ymd(O.committed[i]) : null, src: col(O.supply, i), disc: O.disc[i], dtm: O.dtm[i], scr: O.screen[i], ovr: col(O.override, i) });
+    for (let i = 0; i < S.qty.length; i++) sales.push({
+      doc: col(S.doc, i), inv: col(S.invoice, i), date: S.date[i] ? ymd(S.date[i]) : null, on: col(S.order_no, i), code: col(S.item, i), qty: S.qty[i], line: S.line[i],
+      irate: S.irate[i], gst: S.gst[i], freight: S.freight[i], fx: S.fx[i] });
+    return {
+      orders, sales, settings: Object.assign({}, p.settings),
+      accounts: p.accounts.map(a => ({ account: a[0], cid: a[1], customer: a[2], unit: a[3], ctype: a[4], sp: a[5], cur: a[6] })),
+      items: p.items.map(a => ({ code: a[0], itype: a[1], ptype: a[2], plr: a[3], runit: a[4] })), ref: p.accounts_ref || [], source: p.source };
+  }
+
+  // ---------- loaded sheets (by header name) → raw rows ----------
+  const H = {
+    orders: { po: ['PO Date'], acct: ['Customer Account', 'Customer'], on: ['Order No'], code: ['Item Code'], qty: ['Order Qty'], rate: ['Rate (blank = price list)', 'Rate (₹ per unit)', 'Rate'],
+      ot: ['Order Type'], cdate: ['Committed Date'], src: ['Supply Source'], disc: ['Order Discount % (1st line only)', 'Order Discount %'], dtm: ['DTM Charges ₹ (1st line only)', 'DTM Charges ₹'],
+      scr: ['Screen Charges ₹ (1st line only)', 'Screen Charges ₹'], ovr: ['Status Override'] },
+    sales: { doc: ['Document Type'], inv: ['Invoice / DC No'], date: ['Invoice Date'], on: ['Order No'], code: ['Item Code'], qty: ['Qty'], line: ['Line No'],
+      irate: ['Invoice Rate (blank = order rate)', 'Invoice Rate'], gst: ['GST %'], freight: ['Freight / Transport ₹', 'Freight ₹'], fx: ['FX Rate USD→₹', 'FX Rate'] },
+    accounts: { account: ['Account Name'], cid: ['Customer ID'], customer: ['Customer Name'], unit: ['Unit'], ctype: ['Customer Type'], sp: ['Sales Person'], cur: ['Currency'] },
+    items: { code: ['Item Code'], itype: ['Item Type'], ptype: ['Product Type'], plr: ['Price List Rate'], runit: ['Rate Unit'] }
+  };
+  function sheetKind(headerRow) {
+    const h = new Set(headerRow.map(x => String(x || '').trim()));
+    if (h.has('Invoice / DC No')) return 'sales';
+    if (h.has('Order No') && h.has('PO Date')) return 'orders';
+    if (h.has('Account Name')) return 'accounts';
+    if (h.has('Item Code') && h.has('Price List Rate')) return 'items';
+    return null;
+  }
+  function findHeader(aoa) {
+    for (let r = 0; r < Math.min(aoa.length, 12); r++) { const k = sheetKind(aoa[r] || []); if (k) return { row: r, kind: k }; }
+    return null;
+  }
+  function rowsFromAoA(aoa) {
+    const hd = findHeader(aoa); if (!hd) return null;
+    const head = aoa[hd.row].map(x => String(x || '').trim()), map = H[hd.kind], idx = {};
+    for (const f in map) { idx[f] = -1; for (const name of map[f]) { const j = head.indexOf(name); if (j >= 0) { idx[f] = j; break; } } }
+    const out = [];
+    for (let r = hd.row + 1; r < aoa.length; r++) {
+      const row = aoa[r] || []; const o = {}; let any = false;
+      for (const f in idx) { o[f] = idx[f] >= 0 ? row[idx[f]] : null; if (o[f] !== null && o[f] !== undefined && String(o[f]).trim() !== '') any = true; }
+      if (!any) continue;
+      out.push(o);
+    }
+    return { kind: hd.kind, rows: out, missing: Object.keys(idx).filter(f => idx[f] < 0) };
+  }
+  function cleanRows(kind, rows) {
+    if (kind === 'orders') return rows.filter(r => str(r.on)).map(r => ({ po: parseDate(r.po), acct: str(r.acct), on: str(r.on), code: str(r.code) && str(r.code).toUpperCase(), qty: num(r.qty), rate: num(r.rate),
+      ot: str(r.ot) || 'CUSTOMER', cdate: parseDate(r.cdate), src: str(r.src), disc: num(r.disc), dtm: num(r.dtm), scr: num(r.scr), ovr: str(r.ovr) }));
+    if (kind === 'sales') return rows.filter(r => str(r.on) || str(r.inv)).map(r => ({ doc: str(r.doc) || 'TAX INVOICE', inv: str(r.inv), date: parseDate(r.date), on: str(r.on), code: str(r.code) && str(r.code).toUpperCase(),
+      qty: num(r.qty), line: num(r.line), irate: num(r.irate), gst: num(r.gst), freight: num(r.freight), fx: num(r.fx) }));
+    if (kind === 'accounts') return rows.filter(r => str(r.account)).map(r => ({ account: str(r.account), cid: str(r.cid), customer: str(r.customer) || str(r.account), unit: str(r.unit) || 'MAIN', ctype: str(r.ctype) || 'Customer', sp: str(r.sp), cur: str(r.cur) || 'INR' }));
+    if (kind === 'items') return rows.filter(r => str(r.code)).map(r => ({ code: str(r.code).toUpperCase(), itype: str(r.itype), ptype: str(r.ptype), plr: num(r.plr), runit: str(r.runit) || null }));
+    return [];
+  }
+
+  // ---------- the model (same rules as the entry file) ----------
+  function build(raw) {
+    const S = raw.settings, golive = ymd(S.golive), tol = S.tol, usd = S.usdinr;
+    const acc = new Map(raw.accounts.map(a => [a.account, a]));
+    const itm = new Map(raw.items.map(a => [a.code, a]));
+    const orders = raw.orders.map((o, i) => Object.assign({ i }, o));
+    const discOrder = new Map(), charges = new Map(), occ = new Map();
+    for (const o of orders) {
+      if (o.disc !== null && o.disc !== undefined) discOrder.set(o.on, Math.max(discOrder.get(o.on) ?? -Infinity, o.disc));
+      const c = (o.dtm || 0) + (o.scr || 0); if (c) charges.set(o.on, (charges.get(o.on) || 0) + c);
+    }
+    const byKey = new Map();
+    let unknownAcct = 0, unknownItem = 0;
+    for (const o of orders) {
+      const a = acc.get(o.acct);
+      if (!a) unknownAcct++;
+      o.cid = a ? a.cid : (o.acct ? 'UNLISTED' : null); o.cust = a ? a.customer : (o.acct || 'Unknown'); o.unit = a ? a.unit : 'MAIN'; o.sp = a && a.sp ? a.sp : 'Unassigned';
+      o.cur = (a && a.cur === 'USD' && o.po !== null && o.po >= golive) ? 'USD' : 'INR';
+      let it = itm.get(o.code); if (!it) { it = deriveItem(o.code); if (o.code) unknownItem++; }
+      o.itype = it ? it.itype : null; o.ptype = it ? (it.ptype || 'TO CONFIRM') : null; o.plr = it ? it.plr : null; o.runit = it ? it.runit : null;
+      o.factor = FACTOR[o.runit] ?? 1;
+      Object.assign(o, itemParts(o.code, o.itype));
+      o.rateUsed = (o.rate !== null && o.rate !== undefined) ? o.rate : (o.plr ?? null);
+      o.discOrder = discOrder.has(o.on) ? discOrder.get(o.on) : 0;
+      o.fx = o.cur === 'USD' ? usd : 1;
+      o.value = (o.qty !== null && o.rateUsed !== null) ? Math.round(o.qty * o.rateUsed * o.factor * o.fx * (1 - o.discOrder) * 100) / 100 : null;
+      const k0 = o.on + '|' + o.code; const n = (occ.get(k0) || 0) + 1; occ.set(k0, n); o.line = n; o.key = k0 + '|' + n;
+      o.dq = 0; o.last = null;
+      if (!byKey.has(o.key)) byKey.set(o.key, o);
+    }
+    const seenTI = new Set(); let unmatched = 0;
+    const sales = raw.sales.map((s, i) => {
+      s = Object.assign({ i }, s);
+      s.key = s.on + '|' + s.code + '|' + (s.line ? Math.round(s.line) : 1);
+      const o = byKey.get(s.key) || null; s.o = o; if (!o) unmatched++;
+      s.rate = (s.irate !== null && s.irate !== undefined) ? s.irate : (o ? o.rateUsed : null);
+      s.fxUsed = o && o.cur === 'USD' ? (s.fx ?? usd) : 1;
+      const sign = s.doc === 'CREDIT NOTE' ? -1 : 1;
+      s.goods = (o && s.qty !== null && s.rate !== null) ? Math.round(sign * s.qty * s.rate * o.factor * s.fxUsed * (1 - o.discOrder) * 100) / 100 : null;
+      s.charges = 0;
+      if (s.doc === 'TAX INVOICE' && !seenTI.has(s.on)) { seenTI.add(s.on); s.charges = charges.get(s.on) || 0; }
+      s.net = s.goods === null ? null : s.goods + s.charges;
+      s.counts = s.doc !== 'STOCK TRANSFER DC' && o && o.ot === 'CUSTOMER';
+      if (o && s.doc !== 'CREDIT NOTE' && s.qty !== null) { o.dq += s.qty; if (s.date !== null && (o.last === null || s.date > o.last)) o.last = s.date; }
+      return s;
+    });
+    for (const o of orders) {
+      o.bal = o.qty !== null ? o.qty - o.dq : null;
+      o.status = o.ovr ? o.ovr : (o.dq === 0 ? 'OPEN' : (o.qty !== null && o.dq >= o.qty * (1 - tol) ? 'COMPLETED' : 'PARTIAL'));
+    }
+    let dataEnd = null, dataStart = null;
+    for (const o of orders) if (o.po !== null) { dataEnd = Math.max(dataEnd ?? o.po, o.po); dataStart = Math.min(dataStart ?? o.po, o.po); }
+    for (const s of sales) if (s.date !== null) { dataEnd = Math.max(dataEnd ?? s.date, s.date); dataStart = Math.min(dataStart ?? s.date, s.date); }
+    const today = Math.max(S.today ? ymd(S.today) : 0, dataEnd ?? 0) || null;
+    // first date from which sales are complete (history: invoices on 2024 orders are missing before Apr 2025)
+    const reliableFrom = (S.reliable_from && dataStart !== null) ? Math.max(ymd(S.reliable_from), dataStart) : dataStart;
+    return { orders, sales, settings: S, acc, itm, dataEnd, dataStart, reliableFrom, today, quality: { unmatched, unknownAcct, unknownItem,
+      noValueOrders: orders.filter(o => o.value === null && o.ot === 'CUSTOMER').length, noValueSales: sales.filter(s => s.net === null && s.counts).length, noDateSales: sales.filter(s => s.date === null && s.counts).length,
+      noDateValue: sales.reduce((t, s) => t + (s.date === null && s.counts && s.net !== null ? s.net : 0), 0) } };
+  }
+
+  // ---------- periods ----------
+  function monthIdx(ms) { const d = new Date(ms); return d.getUTCFullYear() * 12 + d.getUTCMonth(); }
+  function fromMonthIdx(a) { return Date.UTC(Math.floor(a / 12), a % 12, 1); }
+  const LEN = { M: 1, Q: 3, H: 6, Y: 12 };
+  function periodStart(ms, g, yb) {
+    if (g === 'W') { const day = new Date(ms).getUTCDay(); return ms - ((day + 6) % 7) * DAY; }
+    const A = monthIdx(ms), m = A % 12, rel = (m - (yb - 1) + 12) % 12, base = A - rel;
+    return fromMonthIdx(base + rel - (rel % LEN[g]));
+  }
+  function periodEnd(start, g) { return g === 'W' ? start + 6 * DAY : fromMonthIdx(monthIdx(start) + LEN[g]) - DAY; }
+  function prevStart(start, g, yb) { return periodStart(start - DAY, g, yb); }
+  function lyStart(start, g, yb) { return g === 'W' ? start - 364 * DAY : fromMonthIdx(monthIdx(start) - 12); }
+  const MN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fyLabel(y) { return 'FY' + String(y % 100).padStart(2, '0') + '-' + String((y + 1) % 100).padStart(2, '0'); }
+  function isoWeek(ms) { const d = new Date(ms + 3 * DAY); const y = d.getUTCFullYear(); const jan4 = Date.UTC(y, 0, 4); const w1 = periodStart(jan4, 'W'); return { y, w: Math.floor((ms - w1) / (7 * DAY)) + 1 }; }
+  function label(start, g, yb, short) {
+    const d = new Date(start), y = d.getUTCFullYear(), m = d.getUTCMonth();
+    if (g === 'W') { const w = isoWeek(start); return short ? 'W' + w.w : 'W' + w.w + ' · ' + d.getUTCDate() + ' ' + MN[m] + ' ' + y; }
+    if (g === 'M') return short ? MN[m] + ' ' + String(y).slice(2) : MN[m] + ' ' + y;
+    const fy = yb === 4, fyy = m >= 3 ? y : y - 1;
+    if (g === 'Q') { const q = Math.floor(((m - (yb - 1) + 12) % 12) / 3) + 1; return fy ? 'Q' + q + ' ' + fyLabel(fyy) : 'Q' + q + ' ' + y; }
+    if (g === 'H') { const h = ((m - (yb - 1) + 12) % 12) < 6 ? 1 : 2; return fy ? 'H' + h + ' ' + fyLabel(fyy) : 'H' + h + ' ' + y; }
+    return fy ? fyLabel(fyy) : String(y);
+  }
+  function periodsBetween(a, b, g, yb) { const out = []; let s = periodStart(a, g, yb); while (s <= b) { out.push(s); s = periodEnd(s, g) + DAY; } return out; }
+  // like-for-like window: a period that runs past the data end is cut at the data end, and its comparison is cut at the same elapsed day
+  function windowFor(start, g, cmpStart, dataEnd) {
+    const end = periodEnd(start, g), cmpEnd = periodEnd(cmpStart, g);
+    if (end <= dataEnd) return { cur: [start, end], cmp: [cmpStart, cmpEnd], partial: false };
+    const elapsed = dataEnd - start;
+    return { cur: [start, dataEnd], cmp: [cmpStart, Math.min(cmpEnd, cmpStart + elapsed)], partial: true };
+  }
+
+  // ---------- filters ----------
+  function orderPass(o, f) {
+    if (!o) return false;
+    if (f.scope === 'CUSTOMER' && o.ot !== 'CUSTOMER') return false;
+    if (f.cat !== 'ALL' && o.itype !== f.cat) return false;
+    if (f.sub !== 'ALL' && o.ptype !== f.sub) return false;
+    if (f.cust !== 'ALL') { if (f.cust.startsWith('C:') ? o.cid !== f.cust.slice(2) : o.acct !== f.cust.slice(2)) return false; }
+    if (f.sp !== 'ALL' && o.sp !== f.sp) return false;
+    return true;
+  }
+  function salePass(s, f) { if (!orderPass(s.o, f)) return false; if (f.scope === 'CUSTOMER' && !s.counts) return false; return true; }
+  const LIVE = o => o.status !== 'CANCELLED' && o.status !== 'DOUBLE ENTRY';
+
+  function measures(M, f, r) {
+    const [a, b] = r; const out = { net: 0, goods: 0, qtyR: 0, qtyB: 0, goodsR: 0, goodsB: 0, qtyValR: 0, qtyValB: 0, inv: new Set(), cust: new Set(),
+      intake: 0, intakeQtyR: 0, intakeQtyB: 0, orders: new Set(), otdOn: 0, otdN: 0, freight: 0 };
+    for (const s of M.fs) {
+      if (s.date === null || s.date < a || s.date > b) continue;
+      if (s.net !== null) { out.net += s.net; out.goods += s.goods; if (s.net > 0) out.cust.add(s.o.cid); }
+      if (s.freight) out.freight += s.freight;
+      if (s.doc !== 'CREDIT NOTE' && s.qty !== null) {
+        if (s.o.itype === 'RIBBON') { out.qtyR += s.qty; if (s.goods !== null) { out.goodsR += s.goods; out.qtyValR += s.qty; } }
+        else { out.qtyB += s.qty; if (s.goods !== null) { out.goodsB += s.goods; out.qtyValB += s.qty; } }
+      }
+      if (s.inv) out.inv.add(s.inv);
+    }
+    for (const o of M.fo) {
+      if (o.po !== null && o.po >= a && o.po <= b && LIVE(o)) {
+        if (o.value !== null) out.intake += o.value;
+        if (o.qty !== null) { if (o.itype === 'RIBBON') out.intakeQtyR += o.qty; else out.intakeQtyB += o.qty; }
+        out.orders.add(o.on);
+      }
+      if (o.status === 'COMPLETED' && o.last !== null && o.cdate !== null && o.last >= a && o.last <= b) { out.otdN++; if (o.last <= o.cdate) out.otdOn++; }
+    }
+    out.otd = out.otdN ? out.otdOn / out.otdN : null;
+    out.rateR = out.qtyValR ? out.goodsR / out.qtyValR : null; out.rateB = out.qtyValB ? out.goodsB / out.qtyValB : null;
+    out.nCust = out.cust.size; out.nInv = out.inv.size; out.nOrders = out.orders.size;
+    out.b2b = out.net ? out.intake / out.net : null;
+    return out;
+  }
+
+  function groupSum(rows, keyFn, valFn) { const m = new Map(); for (const r of rows) { const k = keyFn(r); if (k === null || k === undefined) continue; const v = valFn(r); if (v === null || v === undefined) continue; m.set(k, (m.get(k) || 0) + v); } return m; }
+  const inR = (t, r) => t !== null && t >= r[0] && t <= r[1];
+
+  function analyse(M0, f) {
+    const M = { fo: M0.orders.filter(o => orderPass(o, f)), fs: M0.sales.filter(s => salePass(s, f)) };
+    const g = f.grain, yb = f.ybasis, end = M0.dataEnd;
+    const start = f.period;
+    const cmpStart = f.cmp === 'LY' ? lyStart(start, g, yb) : prevStart(start, g, yb);
+    const W = windowFor(start, g, cmpStart, end);
+    // a comparison is only shown when its period lies inside the complete history (a week may start up to 6 days early)
+    const rel = M0.reliableFrom, slack = g === 'W' ? 6 * DAY : 0, okFrom = t => t >= rel - slack;
+    W.cmpOK = okFrom(W.cmp[0]);
+    const cur = measures(M, f, W.cur), cmp = measures(M, f, W.cmpOK ? W.cmp : [1, 0]);
+    // trend window
+    const N = { W: 13, M: 12, Q: 8, H: 6, Y: 12 }[g];
+    let starts = []; let s = start; for (let k = 0; k < N; k++) { starts.unshift(s); s = prevStart(s, g, yb); if (!okFrom(s)) break; }
+    const trend = starts.map(p => {
+      const w = windowFor(p, g, lyStart(p, g, yb), end);
+      const c = measures(M, f, w.cur), l = okFrom(w.cmp[0]) ? measures(M, f, w.cmp) : null;
+      return { start: p, label: label(p, g, yb, true), full: label(p, g, yb), partial: w.partial, net: c.net, netLY: l && l.net, intake: c.intake, intakeLY: l && l.intake,
+        qtyR: c.qtyR, qtyB: c.qtyB, qtyRLY: l && l.qtyR, qtyBLY: l && l.qtyB, otd: c.otd, otdN: c.otdN, rateR: c.rateR, rateB: c.rateB };
+    });
+    // breakdowns for the selected window (current and comparison)
+    const curS = M.fs.filter(x => inR(x.date, W.cur)), cmpS = W.cmpOK ? M.fs.filter(x => inR(x.date, W.cmp)) : [];
+    const byCat = (rows, k) => groupSum(rows, x => x.o[k], x => x.net);
+    const subCur = byCat(curS, 'ptype'), subCmp = byCat(cmpS, 'ptype'), catCur = byCat(curS, 'itype'), catCmp = byCat(cmpS, 'itype');
+    const subQty = groupSum(curS.filter(x => x.doc !== 'CREDIT NOTE'), x => x.o.ptype, x => x.qty);
+    const custCur = groupSum(curS, x => x.o.cid, x => x.net), custCmp = groupSum(cmpS, x => x.o.cid, x => x.net);
+    const acctCur = groupSum(curS, x => x.o.acct, x => x.net), acctCmp = groupSum(cmpS, x => x.o.acct, x => x.net);
+    const custName = new Map(); for (const o of M0.orders) if (o.cid && !custName.has(o.cid)) custName.set(o.cid, o.cust);
+    const custUnits = new Map(); for (const o of M0.orders) if (o.cid) { if (!custUnits.has(o.cid)) custUnits.set(o.cid, new Set()); custUnits.get(o.cid).add(o.acct); }
+    const spCur = groupSum(curS, x => x.o.sp, x => x.net), spCmp = groupSum(cmpS, x => x.o.sp, x => x.net);
+    const spCust = new Map(); for (const x of curS) { if (x.net > 0) { if (!spCust.has(x.o.sp)) spCust.set(x.o.sp, new Set()); spCust.get(x.o.sp).add(x.o.cid); } }
+    const widthQty = groupSum(curS.filter(x => x.o.itype === 'RIBBON' && x.doc !== 'CREDIT NOTE'), x => x.o.width ? x.o.width + ' mm' : null, x => x.qty);
+    const widthNet = groupSum(curS.filter(x => x.o.itype === 'RIBBON'), x => x.o.width ? x.o.width + ' mm' : null, x => x.net);
+    const styleQty = groupSum(curS.filter(x => x.o.itype === 'BOW' && x.doc !== 'CREDIT NOTE'), x => x.o.style || null, x => x.qty);
+    const styleNet = groupSum(curS.filter(x => x.o.itype === 'BOW'), x => x.o.style || null, x => x.net);
+    // order book snapshot (at the data end), respecting filters
+    const open = M.fo.filter(o => o.status === 'OPEN' || o.status === 'PARTIAL');
+    const ageB = ['0–15 days', '16–30 days', '31–60 days', '61–90 days', 'Over 90 days'];
+    const age = ageB.map(k => ({ bucket: k, value: 0, lines: 0, overdue: 0 }));
+    let openVal = 0, overdueVal = 0, overdueLines = 0, openNoValue = 0;
+    const overdueList = [];
+    for (const o of open) {
+      const bv = o.value !== null && o.qty ? o.value * Math.max(o.bal, 0) / o.qty : null;
+      const days = o.po !== null ? Math.floor((M0.today - o.po) / DAY) : null;
+      const bi = days === null ? 4 : days <= 15 ? 0 : days <= 30 ? 1 : days <= 60 ? 2 : days <= 90 ? 3 : 4;
+      age[bi].lines++; if (bv !== null) { age[bi].value += bv; openVal += bv; } else openNoValue++;
+      const od = o.cdate !== null && o.cdate < M0.today;
+      if (od) { overdueLines++; if (bv !== null) { overdueVal += bv; age[bi].overdue += bv; } overdueList.push({ on: o.on, acct: o.acct, code: o.code, bal: o.bal, itype: o.itype, value: bv, late: Math.floor((M0.today - o.cdate) / DAY), status: o.status }); }
+    }
+    overdueList.sort((x, y) => (y.value || 0) - (x.value || 0));
+    const supply = groupSum(M.fo.filter(o => inR(o.po, W.cur) && LIVE(o)), o => o.src || 'Not recorded', o => o.value ?? 0);
+    const supplyLines = groupSum(M.fo.filter(o => inR(o.po, W.cur) && LIVE(o)), o => o.src || 'Not recorded', () => 1);
+    // customer × month heat map (last 12 months up to the data end)
+    const mStarts = periodsBetween(fromMonthIdx(monthIdx(end) - 11), end, 'M', 1);
+    const heatRows = M.fs.filter(x => x.date !== null && x.date >= mStarts[0] && x.net !== null);
+    const heatTot = groupSum(heatRows, x => x.o.cid, x => x.net);
+    const topHeat = [...heatTot.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(e => e[0]);
+    const heat = topHeat.map(cid => ({ cid, name: custName.get(cid), vals: mStarts.map(ms => { const me = periodEnd(ms, 'M'); let t = 0; for (const x of heatRows) if (x.o.cid === cid && x.date >= ms && x.date <= me) t += x.net; return t; }) }));
+    return { W, cur, cmp, trend, subCur, subCmp, subQty, catCur, catCmp, custCur, custCmp, acctCur, acctCmp, custName, custUnits, spCur, spCmp, spCust,
+      widthQty, widthNet, styleQty, styleNet, age, openVal, overdueVal, overdueLines, openLines: open.length, openNoValue, overdueList: overdueList.slice(0, 12),
+      supply, supplyLines, heat, heatMonths: mStarts.map(ms => label(ms, 'M', 1, true)), nFo: M.fo.length, nFs: M.fs.length,
+      trendCut: starts.length < N && starts[0] > periodStart(M0.dataStart, g, yb) };
+  }
+
+  return { decodePayload, rowsFromAoA, cleanRows, build, analyse, periodStart, periodEnd, prevStart, lyStart, label, periodsBetween, windowFor, SUBCATS, DAY, parseDate, num, ymd };
+})();
+if (typeof module !== 'undefined') module.exports = Engine;
+
+</script>
+<script>
+(() => {
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const HIST = JSON.parse(document.getElementById('hist').textContent);
+  const E = Engine;
+  let RAW = null, M = null, CUR = null;
+  const F = { cat: 'ALL', sub: 'ALL', cust: 'ALL', sp: 'ALL', scope: 'CUSTOMER', grain: 'M', ybasis: 1, cmp: 'LY', period: null, measure: 'net' };
+  let TAB = 'overview';
+
+  // ---------- formatting ----------
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  function inr(v, dp) {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e7) return s + '₹' + (a / 1e7).toFixed(dp ?? 2) + ' Cr';
+    if (a >= 1e5) return s + '₹' + (a / 1e5).toFixed(dp ?? 1) + ' L';
+    return s + '₹' + Math.round(a).toLocaleString('en-IN');
+  }
+  function qty(v, unit) {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    const a = Math.abs(v);
+    const t = a >= 1e7 ? (a / 1e7).toFixed(2) + ' Cr' : a >= 1e5 ? (a / 1e5).toFixed(1) + ' L' : Math.round(a).toLocaleString('en-IN');
+    return (v < 0 ? '−' : '') + t + (unit ? ' ' + unit : '');
+  }
+  const pct = (v, dp = 0) => (v === null || v === undefined || !isFinite(v)) ? '—' : (v * 100).toFixed(dp) + '%';
+  function chg(c, p) { if (p === null || p === undefined || !p || c === null) return null; return c / p - 1; }
+  function deltaEl(d, goodUp = true, suffix = '') {
+    const span = document.createElement('span');
+    if (d === null || !isFinite(d)) { span.className = 'delta flat'; span.textContent = 'no comparison'; return span; }
+    const up = d > 0.0005, down = d < -0.0005;
+    span.className = 'delta ' + (up ? (goodUp ? 'up' : 'down') : down ? (goodUp ? 'down' : 'up') : 'flat');
+    span.textContent = (up ? '▲ ' : down ? '▼ ' : '■ ') + (d > 0 ? '+' : '') + (d * 100).toFixed(1) + '%' + suffix;
+    return span;
+  }
+  const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => t.hidden = true, 3800); }
+
+  // ---------- plotly theme ----------
+  function baseLayout(extra) {
+    const ink2 = css('--ink-2'), muted = css('--muted'), grid = css('--grid'), line = css('--line');
+    return Object.assign({
+      paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', margin: { l: 56, r: 12, t: 10, b: 40 },
+      font: { family: css('--font'), size: 12, color: ink2 }, showlegend: false, hovermode: 'closest',
+      hoverlabel: { bgcolor: css('--surface'), bordercolor: line, font: { color: css('--ink'), family: css('--font') } },
+      xaxis: { gridcolor: grid, linecolor: line, tickfont: { color: muted }, zeroline: false, automargin: true },
+      yaxis: { gridcolor: grid, linecolor: line, tickfont: { color: muted }, zeroline: false, automargin: true, rangemode: 'tozero' },
+      bargap: 0.42, barcornerradius: 4
+    }, extra || {});
+  }
+  const CFG = { displayModeBar: false, responsive: true };
+  // every chart gets a fixed height (CSS and layout agree), so a chart drawn while its tab was hidden can never overflow its card
+  function plot(id, data, layout) {
+    const el = document.getElementById(id); if (!el) return;
+    const h = Number(el.dataset.h) || (el.classList.contains('sm') ? 260 : 320); el.style.height = h + 'px';
+    Plotly.react(el, data, baseLayout(Object.assign({ height: h }, layout)), CFG);
+  }
+  const catX = extra => Object.assign({ type: 'category', gridcolor: css('--grid'), linecolor: css('--line'), tickfont: { color: css('--muted') }, automargin: true }, extra || {});
+  // a "trend" with fewer than 3 periods reads better as bars than as a line
+  const trendTrace = (n, color, extra) => n >= 3
+    ? Object.assign({ type: 'scatter', mode: 'lines+markers', line: { color, width: 2 }, marker: { size: 8, color, line: { color: css('--surface'), width: 2 } } }, extra)
+    : Object.assign({ type: 'bar', marker: { color, cornerradius: 4 } }, extra);
+  function noData(id, msg) { const el = document.getElementById(id); Plotly.purge(el); el.innerHTML = '<div class="empty" style="padding:28px">' + esc(msg || 'No data for this selection') + '</div>'; }
+  function clearNoData(id) { const el = document.getElementById(id); if (el && el.querySelector('.empty')) el.innerHTML = ''; }
+
+  // ---------- data lifecycle ----------
+  function setData(raw, label) {
+    RAW = raw;
+    if (!raw || (!raw.orders.length && !raw.sales.length)) { M = null; RAW = raw; renderAll(); return; }
+    M = E.build(raw);
+    buildFilterOptions();
+    F.period = E.periodStart(M.dataEnd, F.grain, F.ybasis);
+    buildPeriodOptions();
+    renderAll();
+    if (label) toast(label);
+  }
+  // Sales in the rebuilt history are complete from Apr 2025 (invoices on 2024 orders are not in the dispatch reports)
+  const HIST_COMPLETE_FROM = '2025-04-01';
+  function restore() { const r = E.decodePayload(HIST); r.settings.reliable_from = HIST_COMPLETE_FROM; setData(r,'History restored: ' + HIST.orders.qty.length.toLocaleString('en-IN') + ' order lines, ' + HIST.sales.qty.length.toLocaleString('en-IN') + ' invoice lines'); }
+  function emptyRaw() { const h = E.decodePayload(HIST); return { orders: [], sales: [], settings: h.settings, accounts: h.accounts, items: h.items, ref: [], source: 'Empty' }; }
+
+  async function loadFiles(files) {
+    const base = RAW ? Object.assign({}, RAW) : emptyRaw();
+    if (!RAW || !RAW.orders.length) { base.ref = []; }
+    const got = [], loaded = {};
+    for (const file of files) {
+      try {
+        const name = file.name.toLowerCase(); let sheets = [];
+        if (name.endsWith('.csv')) {
+          const text = await file.text(); const wb = XLSX.read(text, { type: 'string', raw: true });
+          sheets.push(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: null }));
+        } else {
+          const buf = await file.arrayBuffer(); const wb = XLSX.read(buf, { type: 'array', cellDates: false, cellFormula: false, cellStyles: false });
+          for (const sn of wb.SheetNames) sheets.push(XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: true, defval: null }));
+        }
+        for (const aoa of sheets) {
+          const r = E.rowsFromAoA(aoa); if (!r) continue;
+          const rows = E.cleanRows(r.kind, r.rows);
+          loaded[r.kind] = rows;
+          got.push(rows.length.toLocaleString('en-IN') + ' ' + r.kind);
+        }
+      } catch (e) { toast('Could not read ' + file.name + ': ' + e.message); return; }
+    }
+    if (!got.length) { toast('No ORDERS / SALES / CUSTOMERS / ITEMS sheet found. Check the header row (e.g. "Order No", "Invoice / DC No").'); return; }
+    // Combine with what is already on the page: rows of the same Order No (or account / item code) are replaced, everything else is kept.
+    // After Reset the page is empty, so the file alone is shown.
+    const combined = !!(RAW && (RAW.orders.length || RAW.sales.length));
+    const onsOf = rows => new Set((rows || []).map(r => r.on).filter(Boolean));
+    if (loaded.orders) { const drop = onsOf(loaded.orders); base.orders = base.orders.filter(o => !drop.has(o.on)).concat(loaded.orders); }
+    if (loaded.sales) { const drop = new Set([...onsOf(loaded.sales), ...onsOf(loaded.orders)]); base.sales = base.sales.filter(s => !drop.has(s.on)).concat(loaded.sales); }
+    const upsert = (old, neu, k) => { const keys = new Set(neu.map(r => r[k])); return old.filter(r => !keys.has(r[k])).concat(neu); };
+    if (loaded.accounts) base.accounts = upsert(base.accounts, loaded.accounts, 'account');
+    if (loaded.items) base.items = upsert(base.items, loaded.items, 'code');
+    const names = [...files].map(f => f.name).join(', ');
+    base.source = combined ? (RAW.source === HIST.source ? 'History' : RAW.source) + ' + ' + names : names;
+    base.combined = combined || !!RAW?.combined;
+    const now = new Date(); base.settings = Object.assign({}, base.settings, { today: now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') });
+    setData(base, 'Loaded ' + got.join(', ') + (combined ? ' – combined with the data already shown (same Order No replaced)' : ''));
+    selectTab('overview');
+  }
+
+  // ---------- filters ----------
+  function segInit(id, key, cb) {
+    $$('#' + id + ' button').forEach(b => b.addEventListener('click', () => {
+      $$('#' + id + ' button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      F[key] = b.dataset.v; cb && cb(); render();
+    }));
+  }
+  function setSeg(id, v) { $$('#' + id + ' button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === v))); }
+  function buildFilterOptions() {
+    const sub = $('#f-sub'); sub.innerHTML = '';
+    const opts = F.cat === 'ALL' ? [] : E.SUBCATS[F.cat].filter(p => M.orders.some(o => o.itype === F.cat && o.ptype === p));
+    sub.add(new Option(F.cat === 'ALL' ? 'All types' : 'All ' + (F.cat === 'RIBBON' ? 'ribbon' : 'bow') + ' types', 'ALL'));
+    opts.forEach(p => sub.add(new Option(nice(p), p)));
+    sub.value = opts.includes(F.sub) ? F.sub : 'ALL'; F.sub = sub.value; $('#f-sub').closest('.sel').dataset.disabled = String(F.cat === 'ALL');
+    const cust = $('#f-cust'); const keep = F.cust; cust.innerHTML = '';
+    cust.add(new Option('All customers', 'ALL'));
+    const custs = new Map(); for (const o of M.orders) { if (!o.cid) continue; if (!custs.has(o.cid)) custs.set(o.cid, { name: o.cust, accts: new Set(), internal: o.ot !== 'CUSTOMER' }); custs.get(o.cid).accts.add(o.acct); }
+    [...custs.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name)).forEach(([cid, c]) => {
+      cust.add(new Option(c.name, 'C:' + cid));
+      if (c.accts.size > 1) [...c.accts].sort().forEach(a => cust.add(new Option('   └ ' + a, 'A:' + a)));
+    });
+    cust.value = [...cust.options].some(o => o.value === keep) ? keep : 'ALL'; F.cust = cust.value;
+    const sp = $('#f-sp'); const keepS = F.sp; sp.innerHTML = ''; sp.add(new Option('All sales people', 'ALL'));
+    [...new Set(M.orders.map(o => o.sp))].sort().forEach(s => sp.add(new Option(s, s))); sp.value = [...sp.options].some(o => o.value === keepS) ? keepS : 'ALL'; F.sp = sp.value;
+  }
+  function buildPeriodOptions() {
+    const sel = $('#f-period'); sel.innerHTML = '';
+    const slack = F.grain === 'W' ? 6 * E.DAY : 0;
+    let ps = E.periodsBetween(M.reliableFrom, M.dataEnd, F.grain, F.ybasis).filter(p => p >= M.reliableFrom - slack).reverse();
+    if (!ps.length) ps = [E.periodStart(M.dataEnd, F.grain, F.ybasis)];
+    ps.forEach(p => { const partial = E.periodEnd(p, F.grain) > M.dataEnd; sel.add(new Option(E.label(p, F.grain, F.ybasis) + (partial ? ' (to date)' : ''), String(p))); });
+    if (!ps.includes(F.period)) F.period = ps[0];
+    sel.value = String(F.period);
+  }
+  const nice = p => ({ 'PLAIN RIBBON': 'Plain / dyed ribbon', 'PRINTED RIBBON': 'Printed ribbon', 'PACKED ROLL': 'Packed roll (25 yd)', 'HAND MADE BOW': 'Hand-made bows', 'MACHINE MADE BOW': 'Machine-made bows', 'TO CONFIRM': 'Type to confirm', RIBBON: 'Ribbons', BOW: 'Bows' }[p] || p);
+  const SUBCOL = { 'PLAIN RIBBON': '--s1', 'PRINTED RIBBON': '--s2', 'PACKED ROLL': '--s3', 'HAND MADE BOW': '--s1', 'MACHINE MADE BOW': '--s2', 'TO CONFIRM': '--ghost', RIBBON: '--s1', BOW: '--s2' };
+
+  // ---------- rendering ----------
+  function render() { if (!M) { renderAll(); return; } CUR = E.analyse(M, F); renderTab(TAB); renderChip(); }
+  // Reset = a truly empty page: no charts, tables, KPI tiles or filter choices left behind
+  function clearAll() {
+    $$('.js-plotly-plot').forEach(el => Plotly.purge(el));
+    $$('.chart').forEach(el => el.innerHTML = '');
+    ['#kpis', '#del-kpis', '#answers', '#hero-ytd', '#mix-cards', '#sub-cards', '#sub-legend', '#trend-legend', '#cust-table', '#sp-table', '#overdue-table'].forEach(s => { const e = $(s); if (e) e.innerHTML = ''; });
+    ['#hero-delta', '#hero-cmp', '#hero-note', '#trend-note', '#recon-note'].forEach(s => $(s).textContent = '');
+    $('#hero-val').textContent = '—'; Plotly.purge('hero-spark');
+    ['#f-sub', '#f-cust', '#f-sp', '#f-period'].forEach(s => $(s).innerHTML = '');
+    Object.assign(F, { cat: 'ALL', sub: 'ALL', cust: 'ALL', sp: 'ALL', period: null }); setSeg('f-cat', 'ALL');
+  }
+  function renderAll() {
+    const has = !!M; $('#empty-overview').hidden = has; $('#ov-body').hidden = !has; $('#filters').hidden = !has;
+    ['p-customers', 'p-products', 'p-delivery'].forEach(id => { const s = document.getElementById(id); s.dataset.disabled = String(!has); });
+    $$('.tab').forEach(b => { if (['customers', 'products', 'delivery'].includes(b.dataset.tab)) b.dataset.disabled = String(!has); });
+    renderChip();
+    if (!has) { clearAll(); renderData(); if (TAB !== 'overview' && TAB !== 'data') selectTab('overview'); return; }
+    CUR = E.analyse(M, F); renderTab(TAB);
+  }
+  function renderChip() {
+    if (!M) { $('#data-chip-text').textContent = 'No data loaded'; return; }
+    const d = new Date(M.dataEnd);
+    $('#data-chip-text').textContent = (RAW.source === HIST.source ? 'History' : RAW.combined ? 'History + loaded file' : 'Loaded file') + ' · to ' + d.getUTCDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()] + ' ' + d.getUTCFullYear() + ' · ' + M.orders.length.toLocaleString('en-IN') + ' order lines';
+  }
+  function renderTab(t) {
+    if (t === 'data') { renderData(); return; }
+    if (!M) return;
+    if (t === 'overview') renderOverview(); else if (t === 'customers') renderCustomers(); else if (t === 'products') renderProducts(); else if (t === 'delivery') renderDelivery();
+  }
+  const perLabel = () => E.label(F.period, F.grain, F.ybasis);
+  const cmpLabel = () => E.label(CUR.W.cmp[0], F.grain, F.ybasis);
+  const fmtD = t => { const d = new Date(t); return d.getUTCDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()] + ' ' + String(d.getUTCFullYear()); };
+  const scopeTxt = () => [F.cat === 'ALL' ? 'All products' : nice(F.cat), F.sub !== 'ALL' ? nice(F.sub) : null, F.cust !== 'ALL' ? $('#f-cust').selectedOptions[0].text.replace('└', '').trim() : null, F.sp !== 'ALL' ? F.sp : null].filter(Boolean).join(' · ');
+
+  function renderOverview() {
+    const c = CUR.cur, p = CUR.cmp, W = CUR.W;
+    $('#hero-eyebrow').textContent = 'Net sales · ' + perLabel() + (W.partial ? ' (to ' + fmtD(W.cur[1]) + ')' : '');
+    $('#hero-val').textContent = inr(c.net);
+    const hd = $('#hero-delta'); hd.innerHTML = ''; hd.appendChild(deltaEl(chg(c.net, p.net)));
+    $('#hero-cmp').textContent = W.cmpOK ? 'vs ' + inr(p.net) + ' in ' + cmpLabel() + (W.partial ? ' (' + fmtD(W.cmp[0]) + '–' + fmtD(W.cmp[1]) + ')' : '')
+      : 'No comparison: ' + cmpLabel() + ' is before the complete history (from ' + fmtD(M.reliableFrom) + ')' + ((F.grain === 'Y' || F.grain === 'Q' || F.grain === 'H') && F.ybasis === 1 ? '. Pick Year "FY Apr–Mar" to compare.' : '');
+    const gn = { W: 'weeks', M: 'months', Q: 'quarters', H: 'half-years', Y: 'years' }[F.grain];
+    $('#hero-note').textContent = scopeTxt() + (F.scope === 'CUSTOMER' ? ' · customers only' : ' · incl. HQ / stock') + ' · line: last ' + CUR.trend.length + ' ' + gn;
+    // year-to-date strip: calendar YTD and FY-to-date, same filters, like-for-like vs last year
+    const ytd = $('#hero-ytd'); ytd.innerHTML = '';
+    [[1, 'Calendar year to date'], [4, 'Financial year to date']].forEach(([yb, l]) => {
+      const a = E.analyse(M, Object.assign({}, F, { grain: 'Y', ybasis: yb, cmp: 'LY', period: E.periodStart(M.dataEnd, 'Y', yb) }));
+      const el = document.createElement('div');
+      el.innerHTML = '<div class="l"></div><div class="v"></div><div class="d"></div>';
+      el.querySelector('.l').textContent = l + ' · ' + E.label(a.W.cur[0], 'Y', yb);
+      el.querySelector('.v').textContent = inr(a.cur.net);
+      const d = el.querySelector('.d');
+      if (a.W.cmpOK) { d.appendChild(deltaEl(chg(a.cur.net, a.cmp.net))); const s = document.createElement('span'); s.textContent = 'vs ' + inr(a.cmp.net) + ' same days last year'; d.appendChild(s); }
+      else d.textContent = 'No comparison (history complete from ' + fmtD(M.reliableFrom) + ')';
+      ytd.appendChild(el);
+    });
+    // spark
+    const tr = CUR.trend;
+    Plotly.react('hero-spark', [
+      { x: tr.map(t => t.full), y: tr.map(t => t.net / 1e5), type: 'scatter', mode: 'lines', line: { color: css('--s1'), width: 2, shape: 'spline', smoothing: .6 }, fill: 'tozeroy', fillcolor: hexA(css('--s1'), .10), hovertemplate: '%{x}: ₹%{y:.1f} L<extra></extra>' },
+      { x: [tr[tr.length - 1].full], y: [tr[tr.length - 1].net / 1e5], type: 'scatter', mode: 'markers', marker: { color: css('--s1'), size: 8, line: { color: css('--surface'), width: 2 } }, hoverinfo: 'skip' }
+    ], Object.assign(baseLayout({ margin: { l: 0, r: 6, t: 4, b: 0 }, xaxis: { visible: false }, yaxis: { visible: false, rangemode: 'tozero' } })), CFG);
+    renderAnswers();
+    // KPIs
+    const k = $('#kpis'); k.innerHTML = '';
+    const unitTxt = F.cat === 'BOW' ? 'pcs' : 'yds';
+    const tiles = [
+      { l: 'Orders received', v: inr(c.intake), d: chg(c.intake, p.intake), s: c.nOrders.toLocaleString('en-IN') + ' orders' },
+      F.cat === 'ALL' ? { l: 'Dispatched', v: qty(c.qtyR, 'yds'), v2: qty(c.qtyB, 'pcs') + ' bows', d: chg(c.qtyR, p.qtyR), s: 'ribbon yards vs comparison' }
+        : { l: 'Dispatched', v: qty(F.cat === 'BOW' ? c.qtyB : c.qtyR, unitTxt), d: chg(F.cat === 'BOW' ? c.qtyB : c.qtyR, F.cat === 'BOW' ? p.qtyB : p.qtyR), s: c.nInv.toLocaleString('en-IN') + ' invoices' },
+      { l: 'Book-to-bill', v: c.b2b === null ? '—' : c.b2b.toFixed(2) + '×', d: null, s: c.b2b === null ? '' : c.b2b >= 1 ? 'Order book growing' : 'Billing more than new orders', raw: true },
+      { l: 'Open order book (today)', v: inr(CUR.openVal), v2: inr(CUR.overdueVal) + ' overdue', d: null, s: CUR.openLines.toLocaleString('en-IN') + ' open lines', raw: true },
+      { l: 'On-time delivery', v: pct(c.otd), d: c.otd !== null && p.otd !== null ? c.otd - p.otd : null, pts: true, s: c.otdN + ' lines completed' },
+      F.cat === 'BOW' ? { l: 'Average bow rate', v: c.rateB === null ? '—' : '₹' + c.rateB.toFixed(2) + ' /pc', d: chg(c.rateB, p.rateB), s: 'goods value ÷ pieces' }
+        : { l: 'Average ribbon rate', v: c.rateR === null ? '—' : '₹' + c.rateR.toFixed(2) + ' /yd', v2: F.cat === 'ALL' && c.rateB !== null ? 'Bows ₹' + c.rateB.toFixed(2) + ' /pc' : '', d: chg(c.rateR, p.rateR), s: 'goods value ÷ yards' },
+      { l: 'Active customers', v: c.nCust.toLocaleString('en-IN'), d: chg(c.nCust, p.nCust), s: 'invoiced in the period' }
+    ];
+    for (const t of tiles) {
+      const el = document.createElement('div'); el.className = 'kpi';
+      el.innerHTML = '<div class="l"></div><div class="v"></div>' + (t.v2 ? '<div class="v2"></div>' : '') + '<div class="d"></div>';
+      el.querySelector('.l').textContent = t.l; el.querySelector('.v').textContent = t.v; if (t.v2) el.querySelector('.v2').textContent = t.v2;
+      const d = el.querySelector('.d');
+      if (!t.raw) {
+        if (t.pts) { const s = document.createElement('span'); const dv = t.d; s.className = 'delta ' + (dv === null ? 'flat' : dv > 0.0005 ? 'up' : dv < -0.0005 ? 'down' : 'flat'); s.textContent = dv === null ? 'no comparison' : (dv > 0 ? '▲ +' : dv < 0 ? '▼ ' : '■ ') + (dv * 100).toFixed(1) + ' pts'; d.appendChild(s); }
+        else d.appendChild(deltaEl(t.d));
+      }
+      const s2 = document.createElement('span'); s2.textContent = t.s; d.appendChild(s2);
+      k.appendChild(el);
+    }
+    renderTrend(); renderMix(); renderTop();
+  }
+  function hexA(hex, a) { const h = hex.replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(x => x + x).join('') : h, 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
+
+  function renderAnswers() {
+    const c = CUR.cur, p = CUR.cmp, ol = $('#answers'); ol.innerHTML = '';
+    const items = [];
+    const d = chg(c.net, p.net);
+    items.push(['How are sales doing?', `<b>${inr(c.net)}</b> net sales in ${esc(perLabel())}${CUR.W.partial ? ' so far' : ''}` + (d === null ? '.' : `, <b>${d >= 0 ? 'up' : 'down'} ${Math.abs(d * 100).toFixed(1)}%</b> on ${esc(cmpLabel())}.`)]);
+    const cc = [...CUR.custCur.entries()].sort((a, b) => b[1] - a[1]);
+    if (cc.length) {
+      const [cid, v] = cc[0]; const name = CUR.custName.get(cid); let extra = '';
+      const units = CUR.custUnits.get(cid); if (units && units.size > 1) extra = ' (' + [...units].sort().map(a => esc(a.replace(name + ' ', '')) + ' ' + inr(CUR.acctCur.get(a) || 0)).join(', ') + ')';
+      items.push(['Who buys most?', `<b>${esc(name)}</b> – ${inr(v)}, ${pct(c.net ? v / c.net : null)} of sales${extra}.`]);
+    }
+    const mv = [...new Set([...CUR.custCur.keys(), ...CUR.custCmp.keys()])].map(k => [k, (CUR.custCur.get(k) || 0) - (CUR.custCmp.get(k) || 0)]).sort((a, b) => b[1] - a[1]);
+    if (mv.length > 1 && CUR.W.cmpOK) { const up = mv[0], dn = mv[mv.length - 1]; items.push(['What changed most?', (up[1] > 0 ? `<b>${esc(CUR.custName.get(up[0]))}</b> +${inr(up[1]).replace('₹', '₹')}` : 'No customer grew') + (dn[1] < 0 ? `; <b>${esc(CUR.custName.get(dn[0]))}</b> ${inr(dn[1])}` : '') + ` vs ${esc(cmpLabel())}.`]); }
+    items.push(['What is still to ship?', `<b>${inr(CUR.openVal)}</b> in ${CUR.openLines.toLocaleString('en-IN')} open lines; <b>${inr(CUR.overdueVal)}</b> (${CUR.overdueLines.toLocaleString('en-IN')} lines) past the promised date.`]);
+    if (c.otd !== null) items.push(['Are we on time?', `<b>${pct(c.otd)}</b> of ${c.otdN} lines completed in the period shipped by the committed date` + (p.otd !== null ? ` (${pct(p.otd)} before).` : '.')]);
+    if (c.b2b !== null) items.push(['Are orders keeping up?', `Orders ${inr(c.intake)} vs sales ${inr(c.net)} – book-to-bill <b>${c.b2b.toFixed(2)}×</b>, ${c.b2b >= 1 ? 'the order book is growing' : 'billing more than new orders'}.`]);
+    items.forEach((it, i) => { const li = document.createElement('li'); li.innerHTML = `<span class="qnum">${i + 1}</span><span><span class="muted">${esc(it[0])}</span><br>${it[1]}</span>`; ol.appendChild(li); });
+  }
+
+  function renderTrend() {
+    const tr = CUR.trend, g = F.grain, mz = F.measure;
+    const gname = { W: 'week', M: 'month', Q: 'quarter', H: 'half-year', Y: 'year' }[g];
+    const qtyBlocked = mz === 'qty' && F.cat === 'ALL';
+    let cur, ly, unit, title;
+    const L = v => (v === null || v === undefined) ? null : v / 1e5;
+    if (mz === 'net') { cur = tr.map(t => L(t.net)); ly = tr.map(t => L(t.netLY)); unit = '₹ lakh'; title = 'Net sales by ' + gname; }
+    else if (mz === 'intake') { cur = tr.map(t => L(t.intake)); ly = tr.map(t => L(t.intakeLY)); unit = '₹ lakh'; title = 'Orders received by ' + gname; }
+    else { const k = F.cat === 'BOW' ? 'qtyB' : 'qtyR'; cur = tr.map(t => L(t[k])); ly = tr.map(t => L(t[k + 'LY'])); unit = 'lakh ' + (F.cat === 'BOW' ? 'pcs' : 'yds'); title = 'Quantity dispatched by ' + gname; }
+    $('#trend-title').textContent = title;
+    $('#trend-sub').textContent = scopeTxt() + ' · ' + unit;
+    const lg = $('#trend-legend'); lg.innerHTML = '';
+    if (qtyBlocked) { noData('c-trend', 'Yards and pieces are never added together. Pick Ribbons or Bows to chart quantity.'); $('#trend-note').textContent = ''; return; }
+    clearNoData('c-trend');
+    lg.innerHTML = '<span><i class="box" style="background:var(--s1)"></i>' + (g === 'Y' ? 'Year' : 'This ' + gname) + '</span><span><i style="background:var(--ink-2)"></i>Same ' + gname + ' last year</span>';
+    const x = tr.map(t => t.label + (t.partial ? ' ▸' : ''));
+    const data = [
+      { x, y: cur, type: 'bar', name: 'This ' + gname, marker: { color: tr.map(t => t.partial ? hexA(css('--s1'), .55) : css('--s1')), cornerradius: 4 },
+        customdata: tr.map(t => t.full + (t.partial ? ' (to date)' : '')), hovertemplate: '<b>%{y:,.1f}</b> ' + unit + '<br>%{customdata}<extra></extra>' },
+      { x, y: ly, type: 'scatter', mode: 'lines+markers', name: 'Last year', line: { color: css('--ink-2'), width: 2 }, marker: { size: 8, color: css('--ink-2'), line: { color: css('--surface'), width: 2 } },
+        hovertemplate: 'Last year: <b>%{y:,.1f}</b> ' + unit + '<extra></extra>', connectgaps: false }
+    ];
+    plot('c-trend', data, { hovermode: 'x unified', xaxis: catX(), yaxis: { title: { text: unit, font: { size: 11 } }, gridcolor: css('--grid'), tickfont: { color: css('--muted') }, rangemode: 'tozero', zeroline: false, automargin: true } });
+    const last = tr[tr.length - 1];
+    $('#trend-note').textContent = (last.partial ? '▸ ' + last.full + ' is still running – bar is lighter and last year is cut at the same day. ' : '')
+      + (CUR.trendCut || ly.some(v => v === null) ? 'Sales history is complete from ' + fmtD(M.reliableFrom) + ', so earlier periods and their comparisons are left out. ' : '') + 'Hover a bar for exact values.';
+  }
+
+  function renderMix() {
+    const cards = $('#mix-cards'); cards.innerHTML = '';
+    const c = CUR.cur, useCat = F.cat === 'ALL' && F.sub === 'ALL';
+    const keys = useCat ? ['RIBBON', 'BOW'] : (F.cat === 'ALL' ? [] : E.SUBCATS[F.cat]).filter(k => CUR.subCur.has(k) || CUR.subCmp.has(k));
+    const src = useCat ? [CUR.catCur, CUR.catCmp] : [CUR.subCur, CUR.subCmp];
+    $('#mix-title').textContent = useCat ? 'Ribbons vs bows' : (F.cat === 'RIBBON' ? 'Ribbon types' : 'Bow types');
+    $('#mix-sub').textContent = 'Net sales · ' + perLabel() + ' vs ' + cmpLabel();
+    const tot = keys.reduce((s, k) => s + (src[0].get(k) || 0), 0);
+    for (const k of keys) {
+      const v = src[0].get(k) || 0, pv = src[1].get(k) || 0;
+      const el = document.createElement('div'); el.className = 'subcard';
+      el.innerHTML = '<div class="n"><span class="sw"></span><span></span></div><div class="v"></div><div class="x"></div>';
+      el.querySelector('.sw').style.background = css(SUBCOL[k] || '--ghost'); el.querySelector('.n span:last-child').textContent = nice(k);
+      el.querySelector('.v').textContent = inr(v);
+      const x = el.querySelector('.x'); x.textContent = pct(tot ? v / tot : null) + ' of sales · '; x.appendChild(deltaEl(chg(v, pv)));
+      cards.appendChild(el);
+    }
+    if (!keys.length) { noData('c-mix'); return; }
+    clearNoData('c-mix');
+    const y = keys.map(nice);
+    const ok = CUR.W.cmpOK;
+    plot('c-mix', (ok ? [{ y, x: keys.map(k => (src[1].get(k) || 0) / 1e5), type: 'bar', orientation: 'h', name: 'Comparison', marker: { color: css('--ghost'), cornerradius: 4 }, hovertemplate: cmpLabel() + ': <b>₹%{x:,.1f} L</b><extra></extra>' }] : []).concat([
+      { y, x: keys.map(k => (src[0].get(k) || 0) / 1e5), type: 'bar', orientation: 'h', name: 'This period', marker: { color: keys.map(k => css(SUBCOL[k] || '--s1')), cornerradius: 4 }, hovertemplate: perLabel() + ': <b>₹%{x:,.1f} L</b><extra></extra>' }
+    ]), { barmode: 'group', bargap: .35, bargroupgap: .12, margin: { l: 10, r: 16, t: 6, b: 34 }, yaxis: { autorange: 'reversed', automargin: true, tickfont: { color: css('--ink-2') } }, xaxis: { title: { text: ok ? '₹ lakh (grey = ' + cmpLabel() + ')' : '₹ lakh', font: { size: 11 } }, gridcolor: css('--grid'), rangemode: 'tozero', zeroline: false } });
+  }
+
+  function renderTop() {
+    const cc = [...CUR.custCur.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+    $('#top-sub').textContent = 'Net sales · ' + perLabel() + ' · ₹ lakh';
+    if (!cc.length) { noData('c-top'); return; } clearNoData('c-top');
+    const names = cc.map(e => CUR.custName.get(e[0]));
+    const ok = CUR.W.cmpOK;
+    plot('c-top', [
+      { y: names, x: cc.map(e => e[1] / 1e5), type: 'bar', orientation: 'h', marker: { color: css('--s1'), cornerradius: 4 }, text: cc.map(e => inr(e[1])), textposition: 'outside', cliponaxis: false, textfont: { color: css('--ink-2'), size: 11 },
+        customdata: cc.map(e => [ok ? inr(CUR.custCmp.get(e[0]) || 0) : 'no comparison', cmpLabel()]), hovertemplate: '<b>%{y}</b><br>This period ₹%{x:,.1f} L<br>%{customdata[1]}: %{customdata[0]}<extra></extra>' }
+    ].concat(ok ? [{ y: names, x: cc.map(e => (CUR.custCmp.get(e[0]) || 0) / 1e5), type: 'scatter', mode: 'markers', marker: { symbol: 'line-ns', size: 16, line: { width: 3, color: css('--ink-2') } }, hovertemplate: cmpLabel() + ': ₹%{x:,.1f} L<extra></extra>' }] : []), { margin: { l: 10, r: 60, t: 6, b: 30 }, bargap: .35, yaxis: { autorange: 'reversed', automargin: true, tickfont: { color: css('--ink-2') } }, xaxis: { gridcolor: css('--grid'), rangemode: 'tozero', zeroline: false } });
+  }
+
+  function renderCustomers() {
+    $('#cust-sub').textContent = scopeTxt() + ' · ' + perLabel() + ' vs ' + cmpLabel();
+    const t = $('#cust-table'); t.innerHTML = '';
+    const ids = [...new Set([...CUR.custCur.keys(), ...CUR.custCmp.keys()])];
+    const tot = [...CUR.custCur.values()].reduce((a, b) => a + b, 0);
+    const rows = ids.map(id => ({ id, name: CUR.custName.get(id), v: CUR.custCur.get(id) || 0, p: CUR.custCmp.get(id) || 0 })).sort((a, b) => b.v - a.v);
+    const max = Math.max(1, ...rows.map(r => r.v));
+    t.innerHTML = '<thead><tr><th>Customer</th><th class="num">' + esc(perLabel()) + '</th><th class="num">' + esc(cmpLabel()) + '</th><th class="num">Change</th><th class="num">Change %</th><th class="num">Share</th><th>Size</th></tr></thead>';
+    const tb = document.createElement('tbody');
+    const addRow = (name, v, p, cls) => {
+      const tr = document.createElement('tr'); if (cls) tr.className = cls;
+      const ok = CUR.W.cmpOK, d = ok && p ? v / p - 1 : null;
+      const cells = [name, inr(v), ok ? inr(p) : '—', ok ? (v - p >= 0 ? '+' : '') + inr(v - p) : '—', d === null ? (ok && v ? 'new' : '—') : (d >= 0 ? '+' : '') + (d * 100).toFixed(1) + '%', pct(tot ? v / tot : null, 1)];
+      cells.forEach((c, i) => { const td = document.createElement('td'); td.textContent = c; if (i) td.className = 'num'; if (i === 4 && d !== null) { td.innerHTML = ''; const s = document.createElement('span'); s.className = 'pill ' + (d >= 0 ? 'up' : 'down'); s.textContent = (d >= 0 ? '▲ +' : '▼ ') + (d * 100).toFixed(1) + '%'; td.appendChild(s); } tr.appendChild(td); });
+      const bc = document.createElement('td'); bc.className = 'bar-cell'; const sp = document.createElement('span'); sp.style.width = Math.max(2, 100 * v / max) + 'px'; if (cls === 'unit') sp.style.opacity = .5; bc.appendChild(sp); tr.appendChild(bc);
+      tb.appendChild(tr);
+    };
+    for (const r of rows) {
+      addRow(r.name, r.v, r.p);
+      const units = CUR.custUnits.get(r.id);
+      if (units && units.size > 1) [...units].sort().forEach(a => addRow(a, CUR.acctCur.get(a) || 0, CUR.acctCmp.get(a) || 0, 'unit'));
+    }
+    if (!rows.length) { const tr = document.createElement('tr'); tr.innerHTML = '<td colspan="7" class="muted">No sales for this selection</td>'; tb.appendChild(tr); }
+    t.appendChild(tb);
+    // movers
+    $('#movers-sub').textContent = 'Net sales change, ' + perLabel() + ' vs ' + cmpLabel() + ', ₹ lakh';
+    const mv = rows.map(r => [r.name, r.v - r.p]).filter(x => Math.abs(x[1]) > 0).sort((a, b) => b[1] - a[1]);
+    const pick = mv.length > 12 ? mv.slice(0, 6).concat(mv.slice(-6)) : mv;
+    if (!CUR.W.cmpOK) noData('c-movers', 'No comparison: ' + cmpLabel() + ' is before the complete history'); else if (!pick.length) noData('c-movers'); else { clearNoData('c-movers'); plot('c-movers', [{ y: pick.map(x => x[0]), x: pick.map(x => x[1] / 1e5), type: 'bar', orientation: 'h', marker: { color: pick.map(x => x[1] >= 0 ? css('--div-pos') : css('--div-neg')), cornerradius: 4 }, hovertemplate: '<b>%{y}</b><br>%{x:+,.1f} L<extra></extra>' }], { margin: { l: 10, r: 14, t: 6, b: 30 }, yaxis: { autorange: 'reversed', automargin: true, tickfont: { color: css('--ink-2') } }, xaxis: { gridcolor: css('--grid'), zeroline: true, zerolinecolor: css('--line') } }); }
+    // heat
+    const h = CUR.heat;
+    if (!h.length) noData('c-heat'); else { clearNoData('c-heat'); plot('c-heat', [{ z: h.map(r => r.vals.map(v => v / 1e5)), x: CUR.heatMonths, y: h.map(r => r.name), type: 'heatmap', colorscale: [[0, css('--seq-0')], [1, css('--seq-1')]], xgap: 2, ygap: 2, hovertemplate: '<b>%{y}</b> · %{x}<br>₹%{z:,.1f} L<extra></extra>', colorbar: { thickness: 10, outlinewidth: 0, tickfont: { color: css('--muted') } } }], { margin: { l: 10, r: 10, t: 6, b: 40 }, yaxis: { autorange: 'reversed', automargin: true, tickfont: { color: css('--ink-2') } }, xaxis: { tickfont: { color: css('--muted') } } }); }
+    // sales people
+    $('#sp-sub').textContent = perLabel() + ' vs ' + cmpLabel();
+    const st = $('#sp-table');
+    const sps = [...new Set([...CUR.spCur.keys(), ...CUR.spCmp.keys()])].map(s => ({ s, v: CUR.spCur.get(s) || 0, p: CUR.spCmp.get(s) || 0, n: (CUR.spCust.get(s) || new Set()).size })).sort((a, b) => b.v - a.v);
+    st.innerHTML = '<thead><tr><th>Sales person</th><th class="num">Net sales</th><th class="num">Comparison</th><th class="num">Change %</th><th class="num">Customers billed</th><th class="num">Share</th></tr></thead>';
+    const tb2 = document.createElement('tbody');
+    for (const r of sps) { const tr = document.createElement('tr'); const d = CUR.W.cmpOK && r.p ? r.v / r.p - 1 : null; [r.s, inr(r.v), CUR.W.cmpOK ? inr(r.p) : '—', d === null ? '—' : (d >= 0 ? '+' : '') + (d * 100).toFixed(1) + '%', String(r.n), pct(tot ? r.v / tot : null, 1)].forEach((c, i) => { const td = document.createElement('td'); td.textContent = c; if (i) td.className = 'num'; tr.appendChild(td); }); tb2.appendChild(tr); }
+    st.appendChild(tb2);
+  }
+
+  function renderProducts() {
+    const cats = F.cat === 'ALL' ? ['RIBBON', 'BOW'] : [F.cat];
+    const keys = cats.flatMap(c => E.SUBCATS[c]).filter(k => (CUR.subCur.get(k) || CUR.subCmp.get(k)) && (F.sub === 'ALL' || F.sub === k));
+    $('#sub-sub').textContent = scopeTxt() + ' · net sales ' + perLabel() + ' vs ' + cmpLabel();
+    const box = $('#sub-cards'); box.innerHTML = '';
+    const tot = keys.reduce((s, k) => s + (CUR.subCur.get(k) || 0), 0);
+    const colOf = k => css(k === 'TO CONFIRM' ? '--ghost' : SUBCOL[k]);
+    for (const k of keys) {
+      const v = CUR.subCur.get(k) || 0, pv = CUR.subCmp.get(k) || 0, q = CUR.subQty.get(k) || 0, isB = E.SUBCATS.BOW.includes(k) && !E.SUBCATS.RIBBON.includes(k);
+      const el = document.createElement('div'); el.className = 'subcard';
+      el.innerHTML = '<div class="n"><span class="sw"></span><span></span></div><div class="v"></div><div class="x"></div>';
+      el.querySelector('.sw').style.background = colOf(k); el.querySelector('.n span:last-child').textContent = nice(k) + (F.cat === 'ALL' && k === 'TO CONFIRM' ? '' : '');
+      el.querySelector('.v').textContent = inr(v);
+      const x = el.querySelector('.x'); x.textContent = qty(q, isB ? 'pcs' : 'yds') + ' · ' + pct(tot ? v / tot : null) + ' · '; x.appendChild(deltaEl(chg(v, pv)));
+      box.appendChild(el);
+    }
+    // sub-category trend: one line per sub-category (max 3 named + to confirm)
+    const tr = CUR.trend; const lines = keys.filter(k => k !== 'TO CONFIRM').slice(0, 3);
+    const lg = $('#sub-legend'); lg.innerHTML = '';
+    if (F.cat === 'ALL') { lg.innerHTML = ''; noData('c-subtrend', 'Pick Ribbons or Bows to see each type over time.'); }
+    else if (!lines.length) noData('c-subtrend');
+    else {
+      clearNoData('c-subtrend');
+      const per = lines.map(k => { const f2 = Object.assign({}, F, { sub: k }); return E.analyse(M, f2).trend; });
+      lines.forEach(k => { const s = document.createElement('span'); s.innerHTML = '<i style="background:' + colOf(k) + '"></i>'; s.appendChild(document.createTextNode(nice(k))); lg.appendChild(s); });
+      const n = per[0].length;
+      plot('c-subtrend', lines.map((k, i) => trendTrace(n, colOf(k), { x: per[i].map(t => t.label + (t.partial ? ' ▸' : '')), y: per[i].map(t => t.net / 1e5), name: nice(k), hovertemplate: nice(k) + ': <b>₹%{y:,.1f} L</b><extra></extra>' })),
+        { hovermode: 'x unified', barmode: 'group', bargap: n < 3 ? .72 : .35, bargroupgap: .12, xaxis: catX(), yaxis: { title: { text: '₹ lakh', font: { size: 11 } }, gridcolor: css('--grid'), rangemode: 'tozero', zeroline: false } });
+    }
+    const showR = F.cat !== 'BOW', showB = F.cat !== 'RIBBON';
+    $('#card-width').hidden = !showR; $('#card-rateR').hidden = !showR; $('#card-style').hidden = !showB; $('#card-rateB').hidden = !showB;
+    const bars = (id, m, unit) => { const e = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10); if (!e.length) { noData(id); return; } clearNoData(id); plot(id, [{ y: e.map(x => x[0]), x: e.map(x => x[1] / 1e5), type: 'bar', orientation: 'h', marker: { color: css('--s1'), cornerradius: 4 }, hovertemplate: '<b>%{y}</b><br>%{x:,.2f} lakh ' + unit + '<extra></extra>' }], { margin: { l: 10, r: 14, t: 6, b: 34 }, yaxis: { autorange: 'reversed', automargin: true, type: 'category', tickfont: { color: css('--ink-2') } }, xaxis: { title: { text: 'lakh ' + unit, font: { size: 11 } }, gridcolor: css('--grid'), rangemode: 'tozero', zeroline: false } }); };
+    if (showR) bars('c-width', CUR.widthQty, 'yds');
+    if (showB) bars('c-style', CUR.styleQty, 'pcs');
+    const rate = (id, key, unit) => { const t2 = CUR.trend.filter(t => t[key] !== null); if (!t2.length) { noData(id); return; } clearNoData(id); plot(id, [trendTrace(t2.length, css('--s2'), { x: t2.map(t => t.label), y: t2.map(t => t[key]), hovertemplate: '%{x}: <b>₹%{y:.2f}</b> ' + unit + '<extra></extra>' })], { margin: { l: 50, r: 12, t: 6, b: 34 }, bargap: .72, xaxis: catX(), yaxis: { title: { text: '₹ ' + unit, font: { size: 11 } }, gridcolor: css('--grid'), rangemode: t2.length >= 3 ? 'normal' : 'tozero', zeroline: false } }); };
+    if (showR) rate('c-rateR', 'rateR', 'per yd');
+    if (showB) rate('c-rateB', 'rateB', 'per pc');
+  }
+
+  function renderDelivery() {
+    const c = CUR.cur, p = CUR.cmp;
+    const k = $('#del-kpis'); k.innerHTML = '';
+    [['Open order book', inr(CUR.openVal), CUR.openLines.toLocaleString('en-IN') + ' lines · ' + CUR.openNoValue + ' without a rate'], ['Past promised date', inr(CUR.overdueVal), CUR.overdueLines.toLocaleString('en-IN') + ' lines'],
+     ['On-time delivery', pct(c.otd), c.otdN + ' lines in ' + perLabel() + (p.otd !== null ? ' · was ' + pct(p.otd) : '')], ['Orders received', inr(c.intake), c.nOrders.toLocaleString('en-IN') + ' orders in ' + perLabel()]]
+      .forEach(([l, v, s]) => { const el = document.createElement('div'); el.className = 'kpi'; el.innerHTML = '<div class="l"></div><div class="v"></div><div class="d"></div>'; el.querySelector('.l').textContent = l; el.querySelector('.v').textContent = v; el.querySelector('.d').textContent = s; k.appendChild(el); });
+    const a = CUR.age;
+    plot('c-age', [
+      { x: a.map(r => r.bucket), y: a.map(r => (r.value - r.overdue) / 1e5), type: 'bar', name: 'On time', marker: { color: css('--s1'), cornerradius: 0 }, hovertemplate: '%{x}<br>On time: <b>₹%{y:,.1f} L</b><extra></extra>' },
+      { x: a.map(r => r.bucket), y: a.map(r => r.overdue / 1e5), type: 'bar', name: 'Past promised date', marker: { color: css('--div-neg'), cornerradius: 4, line: { color: css('--surface'), width: 2 } }, customdata: a.map(r => r.lines), hovertemplate: '%{x}<br>Past promised date: <b>₹%{y:,.1f} L</b><br>%{customdata} lines in bucket<extra></extra>' }
+    ], { barmode: 'stack', xaxis: catX(), yaxis: { title: { text: '₹ lakh', font: { size: 11 } }, gridcolor: css('--grid'), rangemode: 'tozero', zeroline: false } });
+    const tr = CUR.trend.filter(t => t.otdN > 0);
+    $('#otd-sub').textContent = 'Lines completed by the committed date, by ' + { W: 'week', M: 'month', Q: 'quarter', H: 'half-year', Y: 'year' }[F.grain];
+    if (!tr.length) noData('c-otd', 'No completed lines with a committed date in this window'); else { clearNoData('c-otd'); plot('c-otd', [trendTrace(tr.length, css('--s3'), { x: tr.map(t => t.label), y: tr.map(t => t.otd * 100), customdata: tr.map(t => t.otdN), hovertemplate: '%{x}: <b>%{y:.0f}%</b> on time<br>%{customdata} lines<extra></extra>' })], { bargap: .72, xaxis: catX(), yaxis: { title: { text: '% on time', font: { size: 11 } }, range: [0, 105], gridcolor: css('--grid'), zeroline: false } }); }
+    $('#sup-sub').textContent = 'Order value received in ' + perLabel() + ', ₹ lakh';
+    const su = [...CUR.supply.entries()].sort((a, b) => b[1] - a[1]);
+    if (!su.length) noData('c-supply'); else { clearNoData('c-supply'); plot('c-supply', [{ y: su.map(x => x[0]), x: su.map(x => x[1] / 1e5), type: 'bar', orientation: 'h', marker: { color: su.map(x => x[0] === 'Not recorded' ? css('--ghost') : css('--s1')), cornerradius: 4 }, customdata: su.map(x => CUR.supplyLines.get(x[0])), hovertemplate: '<b>%{y}</b><br>₹%{x:,.1f} L · %{customdata} lines<extra></extra>' }], { margin: { l: 10, r: 14, t: 6, b: 34 }, yaxis: { autorange: 'reversed', automargin: true, tickfont: { color: css('--ink-2') } }, xaxis: { gridcolor: css('--grid'), rangemode: 'tozero', zeroline: false } }); }
+    const ot = $('#overdue-table');
+    ot.innerHTML = '<thead><tr><th>Order No</th><th>Customer account</th><th>Item</th><th class="num">Balance</th><th class="num">Value</th><th class="num">Days late</th></tr></thead>';
+    const tb = document.createElement('tbody');
+    for (const r of CUR.overdueList) { const tr2 = document.createElement('tr'); [r.on, r.acct, r.code, qty(r.bal, r.itype === 'BOW' ? 'pcs' : 'yds'), inr(r.value), String(r.late)].forEach((c2, i) => { const td = document.createElement('td'); td.textContent = c2; if (i >= 3) td.className = 'num'; tr2.appendChild(td); }); tb.appendChild(tr2); }
+    if (!CUR.overdueList.length) { const tr2 = document.createElement('tr'); tr2.innerHTML = '<td colspan="6" class="muted">Nothing overdue for this selection</td>'; tb.appendChild(tr2); }
+    ot.appendChild(tb);
+  }
+
+  function renderData() {
+    const t = $('#data-table');
+    if (!M) { t.innerHTML = '<tbody><tr><td class="muted">Nothing loaded. Load a file or restore the history.</td></tr></tbody>'; noData('c-recon', 'No history loaded'); $('#recon-note').textContent = ''; return; }
+    const q = M.quality, d0 = new Date(M.dataStart), d1 = new Date(M.dataEnd);
+    const rows = [['Source', RAW.source], ['Order lines (ORDERS)', M.orders.length.toLocaleString('en-IN')], ['Invoice lines (SALES)', M.sales.length.toLocaleString('en-IN')],
+      ['Date range', fmtD(M.dataStart) + ' – ' + fmtD(M.dataEnd)], ['Customer accounts / items in masters', M.acc.size + ' / ' + M.itm.size.toLocaleString('en-IN')],
+      ['Invoice lines not matched to an order', q.unmatched.toLocaleString('en-IN')], ['Order lines with an unknown account / item', q.unknownAcct + ' / ' + q.unknownItem],
+      ['Customer order lines without any rate', q.noValueOrders.toLocaleString('en-IN')], ['Customer invoice lines without a value', q.noValueSales.toLocaleString('en-IN')],
+      ['Customer invoice lines without an invoice date (not in any period)', q.noDateSales.toLocaleString('en-IN') + (q.noDateValue ? ' · ' + inr(q.noDateValue) : '')]];
+    t.innerHTML = ''; const tb = document.createElement('tbody');
+    rows.forEach(([a, b]) => { const tr = document.createElement('tr'); const t1 = document.createElement('td'); t1.textContent = a; const t2 = document.createElement('td'); t2.textContent = b; t2.style.whiteSpace = 'normal'; tr.append(t1, t2); tb.appendChild(tr); });
+    t.appendChild(tb);
+    const ref = RAW.ref || [];
+    if (!ref.length) { noData('c-recon', 'The accounts reference covers the built-in history only'); $('#recon-note').textContent = ''; return; }
+    clearNoData('c-recon');
+    const m = new Map(); for (const s of M.sales) { if (!s.counts || s.net === null || s.date === null) continue; const k = new Date(s.date).toISOString().slice(0, 7); m.set(k, (m.get(k) || 0) + s.net); }
+    const x = ref.map(r => r[0]), acc = ref.map(r => (r[1] + r[2] + r[3]) / 1e5), dash = ref.map(r => (m.get(r[0]) || 0) / 1e5);
+    plot('c-recon', [
+      { x, y: acc, type: 'bar', name: 'Accounts report', marker: { color: css('--ghost'), cornerradius: 4 }, hovertemplate: '%{x}<br>Accounts: <b>₹%{y:,.1f} L</b><extra></extra>' },
+      { x, y: dash, type: 'bar', name: 'Dashboard', marker: { color: css('--s1'), cornerradius: 4 }, hovertemplate: '%{x}<br>Dashboard: <b>₹%{y:,.1f} L</b><extra></extra>' }
+    ], { barmode: 'group', bargap: .3, bargroupgap: .1, xaxis: catX(), yaxis: { gridcolor: css('--grid'), rangemode: 'tozero', zeroline: false } });
+    const sumA = (a) => a.reduce((s, v) => s + v, 0);
+    const a26 = sumA(acc.filter((_, i) => x[i] >= '2026')), d26 = sumA(dash.filter((_, i) => x[i] >= '2026'));
+    $('#recon-note').textContent = `Jan–Aug 2026: accounts ₹${(a26 / 100).toFixed(2)} Cr vs dashboard ₹${(d26 / 100).toFixed(2)} Cr (${Math.round(100 * d26 / a26)}%). The history is rebuilt from the dispatch reports, which miss some orders that are in SALES DATA and some lines without a price. Jan–Mar 2025 is low because invoices on 2024 orders are not in those reports, so comparisons start from Apr 2025. From 1 October the entry file is the single source, so this gap closes.`;
+  }
+
+  // ---------- tabs ----------
+  function selectTab(t) {
+    TAB = t; $$('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+    ['overview', 'customers', 'products', 'delivery', 'data'].forEach(x => document.getElementById('p-' + x).hidden = x !== t);
+    renderTab(t);
+    requestAnimationFrame(() => $$('#p-' + t + ' .js-plotly-plot').forEach(el => Plotly.Plots.resize(el)));
+  }
+  $$('.tab').forEach(b => b.addEventListener('click', () => selectTab(b.dataset.tab)));
+
+  // ---------- controls ----------
+  segInit('f-cat', 'cat', () => { F.sub = 'ALL'; buildFilterOptions(); if (F.measure === 'qty' && F.cat === 'ALL') { } });
+  segInit('f-grain', 'grain', () => { F.period = E.periodStart(M.dataEnd, F.grain, F.ybasis); buildPeriodOptions(); });
+  segInit('f-measure', 'measure');
+  $('#f-sub').addEventListener('change', e => { F.sub = e.target.value; render(); });
+  $('#f-cust').addEventListener('change', e => { F.cust = e.target.value; render(); });
+  $('#f-sp').addEventListener('change', e => { F.sp = e.target.value; render(); });
+  $('#f-scope').addEventListener('change', e => { F.scope = e.target.value; render(); });
+  $('#f-period').addEventListener('change', e => { F.period = Number(e.target.value); render(); });
+  $('#f-cmp').addEventListener('change', e => { F.cmp = e.target.value; render(); });
+  $('#f-yb').addEventListener('change', e => { F.ybasis = Number(e.target.value); F.period = E.periodStart(M.dataEnd, F.grain, F.ybasis); buildPeriodOptions(); render(); });
+  $('#btn-data').addEventListener('click', () => selectTab('data'));
+  $$('[data-action="pick"]').forEach(b => b.addEventListener('click', () => $('#file-in').click()));
+  $$('[data-action="restore"]').forEach(b => b.addEventListener('click', () => { restore(); selectTab('overview'); }));
+  $('#file-in').addEventListener('change', e => { if (e.target.files.length) loadFiles([...e.target.files]); e.target.value = ''; });
+  $('#btn-reset').addEventListener('click', () => { $('#reset-confirm').hidden = false; });
+  $('#btn-reset-no').addEventListener('click', () => { $('#reset-confirm').hidden = true; });
+  $('#btn-reset-yes').addEventListener('click', () => { $('#reset-confirm').hidden = true; setData(emptyRaw()); toast('Dashboard emptied. Load a file or restore the history.'); });
+  const drop = $('#drop');
+  ['dragover', 'dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.style.borderStyle = 'solid'; }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.style.borderStyle = 'dashed'; }));
+  drop.addEventListener('drop', e => { const fl = [...(e.dataTransfer?.files || [])]; if (fl.length) loadFiles(fl); });
+  // re-theme charts when the theme changes
+  const reTheme = () => { if (M) renderTab(TAB); };
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', reTheme); } catch (e) {}
+  new MutationObserver(reTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  restore();
+})();
+</script>

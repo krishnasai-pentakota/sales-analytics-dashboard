@@ -1,0 +1,11 @@
+{
+  "settings": {
+    "golive": "2026-10-01",
+    "tol": 0.05,
+    "over": 0.1,
+    "usdinr": 88.0,
+    "today": "2026-09-30"
+  },
+  "source": "BOW & RIBBON DISPATCH REPORT 2025 + 2026 (orders, invoices) \u00b7 SALES DATA (rates, discounts, charges) \u00b7 masters v3",
+  "version": "history-2026-09-29"
+}

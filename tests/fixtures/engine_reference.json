@@ -1,0 +1,166 @@
+{
+ "data_end": 1790726400000,
+ "cases": [
+  {
+   "name": "Sep 2026 all products",
+   "filter": {
+    "cat": "ALL",
+    "sub": "ALL",
+    "cust": "ALL",
+    "sp": "ALL",
+    "scope": "CUSTOMER",
+    "cmp": "LY",
+    "ybasis": 1,
+    "grain": "M",
+    "period": 1788220800000
+   },
+   "net": 7103962.499999996,
+   "intake": 7730887.94,
+   "book_to_bill": 1.0882501054869032,
+   "otd": 0.5769230769230769,
+   "otd_lines": 286,
+   "open_value": 7593637.696603922,
+   "open_lines": 645,
+   "overdue_value": 2030099.4516506991,
+   "overdue_lines": 126
+  },
+  {
+   "name": "Aug 2026 all products",
+   "filter": {
+    "cat": "ALL",
+    "sub": "ALL",
+    "cust": "ALL",
+    "sp": "ALL",
+    "scope": "CUSTOMER",
+    "cmp": "LY",
+    "ybasis": 1,
+    "grain": "M",
+    "period": 1785542400000
+   },
+   "net": 7011591.9799999995,
+   "intake": 8937172.019999983,
+   "book_to_bill": 1.2746280795420706,
+   "otd": 0.5693215339233039,
+   "otd_lines": 339,
+   "open_value": 7593637.696603922,
+   "open_lines": 645,
+   "overdue_value": 2030099.4516506991,
+   "overdue_lines": 126
+  },
+  {
+   "name": "Jun 2026 all products",
+   "filter": {
+    "cat": "ALL",
+    "sub": "ALL",
+    "cust": "ALL",
+    "sp": "ALL",
+    "scope": "CUSTOMER",
+    "cmp": "LY",
+    "ybasis": 1,
+    "grain": "M",
+    "period": 1780272000000
+   },
+   "net": 10734453.349999996,
+   "intake": 5259126.259999999,
+   "book_to_bill": 0.48992958360567107,
+   "otd": 0.44208037825059104,
+   "otd_lines": 423,
+   "open_value": 7593637.696603922,
+   "open_lines": 645,
+   "overdue_value": 2030099.4516506991,
+   "overdue_lines": 126
+  },
+  {
+   "name": "Aug 2026 ribbons",
+   "filter": {
+    "cat": "RIBBON",
+    "sub": "ALL",
+    "cust": "ALL",
+    "sp": "ALL",
+    "scope": "CUSTOMER",
+    "cmp": "LY",
+    "ybasis": 1,
+    "grain": "M",
+    "period": 1785542400000
+   },
+   "net": 5778310.830000003,
+   "intake": 6035599.8500000145,
+   "book_to_bill": 1.0445266839340333,
+   "otd": 0.46691176470588236,
+   "otd_lines": 272,
+   "open_value": 6212174.486603902,
+   "open_lines": 485,
+   "overdue_value": 2030099.4516506991,
+   "overdue_lines": 125
+  },
+  {
+   "name": "Aug 2026 bows",
+   "filter": {
+    "cat": "BOW",
+    "sub": "ALL",
+    "cust": "ALL",
+    "sp": "ALL",
+    "scope": "CUSTOMER",
+    "cmp": "LY",
+    "ybasis": 1,
+    "grain": "M",
+    "period": 1785542400000
+   },
+   "net": 1233281.1500000004,
+   "intake": 2901572.1699999995,
+   "book_to_bill": 2.3527256295127827,
+   "otd": 0.9850746268656716,
+   "otd_lines": 67,
+   "open_value": 1381463.21,
+   "open_lines": 160,
+   "overdue_value": 0,
+   "overdue_lines": 1
+  },
+  {
+   "name": "Aug 2026 largest customer",
+   "filter": {
+    "cat": "ALL",
+    "sub": "ALL",
+    "cust": "C:CUS001",
+    "sp": "ALL",
+    "scope": "CUSTOMER",
+    "cmp": "LY",
+    "ybasis": 1,
+    "grain": "M",
+    "period": 1785542400000
+   },
+   "net": 3782046.6200000015,
+   "intake": 2501648.2699999968,
+   "book_to_bill": 0.6614535782745047,
+   "otd": 0.494949494949495,
+   "otd_lines": 198,
+   "open_value": 1675182.3134441546,
+   "open_lines": 345,
+   "overdue_value": 545910.166817365,
+   "overdue_lines": 86
+  },
+  {
+   "name": "Jun 2026 incl. HQ / stock",
+   "filter": {
+    "cat": "ALL",
+    "sub": "ALL",
+    "cust": "ALL",
+    "sp": "ALL",
+    "scope": "ALL",
+    "cmp": "LY",
+    "ybasis": 1,
+    "grain": "M",
+    "period": 1780272000000
+   },
+   "net": 10734453.349999996,
+   "intake": 7277597.609999996,
+   "book_to_bill": 0.6779662990477292,
+   "otd": 0.44208037825059104,
+   "otd_lines": 423,
+   "open_value": 26749767.096603908,
+   "open_lines": 771,
+   "overdue_value": 12763134.241650695,
+   "overdue_lines": 214
+  }
+ ]
+}

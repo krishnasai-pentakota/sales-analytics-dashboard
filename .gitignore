@@ -1,0 +1,19 @@
+# private / never publish
+_private/
+.env
+.env.*
+*.xlsx
+*.xlsm
+*.xls
+data/raw/
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# tooling
+node_modules/
+.DS_Store

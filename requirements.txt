@@ -1,0 +1,5 @@
+pandas>=2.0
+numpy>=1.24
+pytest>=7.4
+# only needed to regenerate screenshots (src/make_screenshots.py)
+playwright>=1.40

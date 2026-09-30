@@ -1,0 +1,42 @@
+account,customer_id,customer,unit,customer_type,sales_person,currency
+Customer 001 Unit A,CUS001,Customer 001,Unit A,Customer,Sales person 1,INR
+Customer 001 Unit B,CUS001,Customer 001,Unit B,Customer,Sales person 1,INR
+Customer 002,CUS002,Customer 002,MAIN,Customer,Sales person 2,INR
+Customer 003,CUS003,Customer 003,MAIN,Customer,Sales person 2,INR
+Customer 004,CUS004,Customer 004,MAIN,Customer,,INR
+Customer 005,CUS005,Customer 005,MAIN,Customer,Sales person 4,INR
+Customer 006,CUS006,Customer 006,MAIN,Customer,,INR
+Customer 007,CUS007,Customer 007,MAIN,Customer,Sales person 4,INR
+Customer 008,CUS008,Customer 008,MAIN,Customer,Sales person 3,INR
+Customer 009,CUS009,Customer 009,MAIN,Customer,Sales person 3,INR
+Customer 010,CUS010,Customer 010,MAIN,Customer,Sales person 2,INR
+Customer 011,CUS011,Customer 011,MAIN,Customer,,INR
+Customer 012,CUS012,Customer 012,MAIN,Customer,Sales person 1,INR
+Customer 013,CUS013,Customer 013,MAIN,Customer,,USD
+Customer 014,CUS014,Customer 014,MAIN,Customer,Sales person 4,INR
+Customer 015,CUS015,Customer 015,MAIN,Customer,Sales person 4,INR
+Customer 016,CUS016,Customer 016,MAIN,Customer,Sales person 1,INR
+Customer 017,CUS017,Customer 017,MAIN,Customer,,INR
+Customer 018,CUS018,Customer 018,MAIN,Customer,,INR
+Customer 019,CUS019,Customer 019,MAIN,Customer,Sales person 4,INR
+Customer 020,CUS020,Customer 020,MAIN,Customer,,INR
+Customer 021,CUS021,Customer 021,MAIN,Customer,,INR
+Customer 022,CUS022,Customer 022,MAIN,Customer,,INR
+Customer 023,CUS023,Customer 023,MAIN,Customer,,INR
+Customer 024,CUS024,Customer 024,MAIN,Customer,,INR
+Customer 025,CUS025,Customer 025,MAIN,Customer,,INR
+Customer 026,CUS026,Customer 026,MAIN,Customer,,INR
+Customer 027,CUS027,Customer 027,MAIN,Customer,,INR
+Customer 028,CUS028,Customer 028,MAIN,Customer,,INR
+Customer 029,CUS029,Customer 029,MAIN,Customer,,INR
+Customer 030,CUS030,Customer 030,MAIN,Customer,,INR
+Customer 031,CUS031,Customer 031,MAIN,Customer,,INR
+Customer 032,CUS032,Customer 032,MAIN,Customer,,INR
+Customer 034,CUS034,Customer 034,MAIN,Customer,Sales person 1,INR
+Customer 035,CUS035,Customer 035,MAIN,Customer,Sales person 4,INR
+Customer 036,CUS036,Customer 036,MAIN,Customer,Sales person 3,INR
+Customer 037,CUS037,Customer 037,MAIN,Customer,Sales person 4,INR
+Customer 038,CUS038,Customer 038,MAIN,Customer,,INR
+Customer 039,CUS039,Customer 039,MAIN,Customer,,INR
+HQ stock transfer (internal),INT001,HQ stock transfer (internal),MAIN,Internal - HQ stock transfer,,INR
+Inventory stock order (internal),INT002,Inventory stock order (internal),MAIN,Internal - stock order,,INR

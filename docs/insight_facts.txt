@@ -1,0 +1,76 @@
+data end 2026-09-30 | customer invoice lines 22068 | customers invoiced 31
+Sep 2026: net ₹71.0 L vs LY ₹76.4 L (-7.1%) | orders ₹77.3 L | b2b 1.09 | otd (0.5769230769230769, 286)
+Aug 2026: net ₹70.1 L vs LY ₹68.7 L (+2.1%) | orders ₹89.4 L | b2b 1.27 | otd (0.5693215339233039, 339)
+Jun 2026: net ₹107.3 L vs LY ₹57.0 L (+88.5%) | orders ₹52.6 L | b2b 0.49 | otd (0.44208037825059104, 423)
+FY26-27 to date (Apr 1 – 2026-09-30): ₹4.81 Cr vs ₹3.99 Cr same days last year (+20.7%)
+Calendar YTD: ₹6.92 Cr vs ₹4.94 Cr (+40.2%)  [Jan–Mar 2025 incomplete — see validation report]
+
+Monthly net sales (₹ L):
+month
+2025-01      8.6
+2025-02     30.1
+2025-03     56.1
+2025-04     54.2
+2025-05     59.5
+2025-06     57.0
+2025-07     83.1
+2025-08     68.7
+2025-09     76.4
+2025-10     67.7
+2025-11     63.8
+2025-12     82.0
+2026-01     69.2
+2026-02     77.0
+2026-03     64.6
+2026-04     86.7
+2026-05     86.3
+2026-06    107.3
+2026-07     60.0
+2026-08     70.1
+2026-09     71.0
+Freq: M
+
+Concentration FY26-27 to date: total ₹4.81 Cr, 25 customers; top1 39.7% (CUS001), top3 72.0%, top5 88.1%, top10 98.2%
+  top 6: [('CUS001', '39.7%'), ('CUS002', '19.6%'), ('CUS003', '12.7%'), ('CUS005', '10.6%'), ('CUS007', '5.6%'), ('CUS006', '4.0%')]
+
+Concentration Jan–Aug 2026: total ₹6.21 Cr, 26 customers; top1 41.5% (CUS001), top3 72.4%, top5 87.4%, top10 97.7%
+  top 6: [('CUS001', '41.5%'), ('CUS002', '20.4%'), ('CUS003', '10.6%'), ('CUS005', '10.3%'), ('CUS006', '4.7%'), ('CUS007', '4.6%')]
+
+Concentration Sep 2026: total ₹0.71 Cr, 15 customers; top1 49.5% (CUS001), top3 80.0%, top5 91.0%, top10 99.1%
+  top 6: [('CUS001', '49.5%'), ('CUS002', '16.8%'), ('CUS007', '13.7%'), ('CUS005', '6.6%'), ('CUS006', '4.4%'), ('CUS004', '2.7%')]
+  CUS001 units Sep 2026: {'Unit A': 16.3, 'Unit B': 18.9}
+
+FY26-27 to date by item type: {'BOW': 0.215, 'RIBBON': 0.785}
+by product type: {'PLAIN RIBBON': 0.586, 'PRINTED RIBBON': 0.192, 'HAND MADE BOW': 0.13, 'MACHINE MADE BOW': 0.084, 'TO CONFIRM': 0.007, 'PACKED ROLL': 0.001}
+avg ribbon rate ₹/yd: 1.74 | yards 21,682,577
+avg bow rate ₹/pc: 0.96 | pieces 10,789,834
+
+By sales person (FY to date): {'Sales person 1': '40.0%', 'Sales person 2': '33.0%', 'Sales person 4': '16.5%', 'Unassigned': '8.6%', 'Sales person 3': '1.9%'}
+2026 sales on accounts with no sales person: ₹0.61 Cr across 13 customers (8.8%)
+
+Sep product types (₹ L) now vs last year: {'HAND MADE BOW': (13.7, 5.6), 'MACHINE MADE BOW': (3.5, 5.2), 'PACKED ROLL': (0.1, 0.0), 'PLAIN RIBBON': (47.6, 44.1), 'PRINTED RIBBON': (5.9, 20.4), 'TO CONFIRM': (0.3, 1.1)}
+Sep avg ribbon ₹/yd 1.89 vs LY 1.84 | bow ₹/pc 1.14 vs LY 0.81
+Printed ribbon net sales by month (₹ L): {'2025-05': 13.3, '2025-06': 2.6, '2025-07': 10.4, '2025-08': 12.9, '2025-09': 20.4, '2025-10': 1.7, '2025-11': 1.4, '2025-12': 13.5, '2026-01': 7.7, '2026-02': 11.2, '2026-03': 8.8, '2026-04': 18.0, '2026-05': 12.4, '2026-06': 45.8, '2026-07': 3.2, '2026-08': 7.2, '2026-09': 5.9}
+
+Jun 2026 by product type (₹ L): {'PRINTED RIBBON': 45.8, 'PLAIN RIBBON': 43.2, 'HAND MADE BOW': 12.7, 'MACHINE MADE BOW': 4.3, 'TO CONFIRM': 1.2, 'PACKED ROLL': 0.2}
+Jun 2026 top customers: {'CUS003': '38.5%', 'CUS001': '26.0%', 'CUS002': '16.6%', 'CUS005': '8.3%'}
+Jun 2025 by product type (₹ L): {'PLAIN RIBBON': 34.8, 'MACHINE MADE BOW': 11.2, 'HAND MADE BOW': 6.2, 'PRINTED RIBBON': 2.6, 'TO CONFIRM': 2.2}
+Accounts report Jun 2026 bows/dyeing/printing (₹ L): {'bows': 23.1, 'dyeing': 70.4, 'printing': 45.9}
+
+On-time delivery by month (lines completed, % on time):
+  2026-01: 42% of 419
+  2026-02: 44% of 497
+  2026-03: 59% of 400
+  2026-04: 44% of 634
+  2026-05: 42% of 821
+  2026-06: 44% of 423
+  2026-07: 61% of 368
+  2026-08: 57% of 339
+  2026-09: 58% of 286
+Open book: {'open_value': '₹75.9 L', 'open_lines': 645, 'overdue_value': '₹20.3 L', 'overdue_lines': 126}
+Open book ageing (₹ L, lines): {'0–15': (24.7, 288), '16–30': (8.4, 101), '31–60': (28.6, 178), '61–90': (13.1, 37), '90+': (1.1, 41)}
+committed date present on 47.0% of order lines
+
+FY order intake by supply source: {'Not recorded': 0.72, 'WAREHOUSE STOCK': 0.16, 'HQ IMPORT': 0.089, 'LOCAL DYEING / PRINTING': 0.023, 'FG STOCK': 0.003, 'YARN DYED': 0.003, 'HQ IMPORT + LOCAL DYEING': 0.001, 'HQ STOCK TRANSFER': 0.0}
+status mix (customer orders, FY): {'COMPLETED': 4940, 'OPEN': 420, 'PARTIAL': 205, 'SHORT-CLOSED': 69, 'CANCELLED': 25, 'CLOSED - OLD DATA': 8}
+Cancelled/double-entry lines: 358 of 20241
