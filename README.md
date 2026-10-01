@@ -36,7 +36,7 @@ Each with Finding / Evidence / Interpretation / Action: [`docs/business_insights
 | ![Customers](screenshots/customer_analysis.png) **Customers** — who drives it, who is slipping | ![Products](screenshots/product_mix.png) **Products** — mix, widths, realised rates |
 | ![Orders](screenshots/orders_and_delivery.png) **Orders & delivery** — open book, overdue, on-time | ![Data](screenshots/data_quality_and_reconciliation.png) **Data** — coverage and reconciliation |
 
-Tab-by-tab guide: [`docs/dashboard_guide.md`](docs/dashboard_guide.md).
+Every period is compared two ways, with the previous period and with the same period last year, on a like-for-like number of days. Tab-by-tab guide: [`docs/dashboard_guide.md`](docs/dashboard_guide.md).
 
 ## KPI framework
 | KPI | Definition (short) |

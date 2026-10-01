@@ -166,7 +166,9 @@
  "prev_trend": {
   "last_net": 7103962.499999996,
   "last_comparison": 7011591.9799999995,
-  "previous_bar_net": 7011591.9799999995
+  "previous_bar_net": 7011591.9799999995,
+  "last_year": 7644165.100000025,
+  "last_year_from_ly_mode": 7644165.100000025
  },
  "season": [
   {

@@ -114,10 +114,13 @@ def test_fixture_is_current_with_the_dashboard_engine():
     assert json.loads(out) == FIXTURE
 
 
-def test_trend_follows_the_compare_choice():
-    """With 'vs previous period' each bar's comparison is the bar before it (it used to be last year regardless)."""
+def test_trend_carries_both_comparisons(model):
+    """Each bar has its previous period (= the bar before) and the same period last year (= Python's Sep 2025)."""
     t = FIXTURE["prev_trend"]
     assert t["last_comparison"] == pytest.approx(t["previous_bar_net"], abs=0.01)
+    assert t["last_year"] == pytest.approx(t["last_year_from_ly_mode"], abs=0.01)
+    a, b = kpis.month_window(2025, 9)
+    assert t["last_year"] == pytest.approx(kpis.net_sales(model, a, b), abs=0.01)
 
 
 def test_seasonality_months_match_python_reference(model):

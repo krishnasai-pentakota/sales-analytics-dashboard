@@ -26,8 +26,10 @@ const out = cases.map(({ name, f }) => {
   return { name, filter: f, net: a.cur.net, intake: a.cur.intake, book_to_bill: a.cur.b2b, otd: a.cur.otd, otd_lines: a.cur.otdN,
            open_value: a.openVal, open_lines: a.openLines, overdue_value: a.overdueVal, overdue_lines: a.overdueLines };
 });
-// the trend must follow the Compare choice: with 'previous period', each bar's comparison is the bar before it
+// the trend carries both comparisons: previous period (the bar before) and the same period last year
 const tr = E.analyse(M, { ...base, cmp: 'PREV', period: Date.UTC(2026, 8, 1) }).trend;
-const prevTrend = { last_net: tr[tr.length - 1].net, last_comparison: tr[tr.length - 1].netLY, previous_bar_net: tr[tr.length - 2].net };
+const trLY = E.analyse(M, { ...base, cmp: 'LY', period: Date.UTC(2026, 8, 1) }).trend;
+const prevTrend = { last_net: tr[tr.length - 1].net, last_comparison: tr[tr.length - 1].netPV, previous_bar_net: tr[tr.length - 2].net,
+  last_year: tr[tr.length - 1].netLY, last_year_from_ly_mode: trLY[trLY.length - 1].netLY };
 const season = E.seasonality(M, base).map(r => ({ y: r.y, m: r.m, net: r.net }));
 process.stdout.write(JSON.stringify({ data_end: M.dataEnd, cases: out, prev_trend: prevTrend, season }, null, 1));

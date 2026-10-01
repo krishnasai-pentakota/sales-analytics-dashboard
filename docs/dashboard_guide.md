@@ -2,8 +2,8 @@
 
 Open `dashboard/index.html` in a browser (it needs internet once for the Plotly and SheetJS CDN scripts). Filters at the top apply to every tab: **Type** (ribbon / bow), **Customer**, **Sales person**, **Orders** (customers only / incl. HQ & stock), **grain** (week … year), **Period**, **Compare** and **Year** basis.
 
-- **Compare** defaults to the previous period of the same size: previous week, month, quarter, half-year or year. Choose "same period last year" for a year-on-year view. A period still running is compared with the same number of days of the comparison period. The trend chart follows this choice.
-- **Year** (FY Apr–Mar by default, or Jan–Dec) only affects quarter, half-year and year views, so it is greyed out for week and month.
+- **Every view is compared two ways:** with the previous period of the same size (previous week, month, quarter or half-year) and with the same period last year. The headline card, the *Answers for this selection* panel and the trend chart (solid line = last year, dashed line = previous period) show both. **Compare** only chooses which one the KPI tiles use. A period still running is compared with the same number of days.
+- **Year** (FY Apr–Mar by default, or Jan–Dec) sets how quarters, half-years and years are cut; week and month views are the same either way.
 
 ## Overview — "Are we up or down, and why?"
 ![](../screenshots/executive_overview.png)

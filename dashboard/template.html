@@ -208,6 +208,7 @@ dl.defs dt{font-weight:700} dl.defs dd{margin:0; color:var(--ink-2)}
             <div class="eyebrow" id="hero-eyebrow">Net sales</div>
             <div class="hero-val" id="hero-val">—</div>
             <div class="hero-meta"><span id="hero-delta"></span><span id="hero-cmp"></span></div>
+            <div class="hero-meta" id="hero-meta2" style="margin-top:4px"><span id="hero-delta2"></span><span id="hero-cmp2"></span></div>
             <div id="hero-spark" style="height:64px; margin-top:8px"></div>
             <div class="note" id="hero-note"></div>
             <div class="ytd" id="hero-ytd"></div>
@@ -660,10 +661,11 @@ const Engine = (() => {
     const N = { W: 13, M: 12, Q: 8, H: 6, Y: 12 }[g];
     let starts = []; let s = start; for (let k = 0; k < N; k++) { starts.unshift(s); s = prevStart(s, g, yb); if (!okFrom(s)) break; }
     const trend = starts.map(p => {
-      const w = windowFor(p, g, f.cmp === 'PREV' ? prevStart(p, g, yb) : lyStart(p, g, yb), end);
-      const c = measures(M, f, w.cur), l = okFrom(w.cmp[0]) ? measures(M, f, w.cmp) : null;
+      const w = windowFor(p, g, lyStart(p, g, yb), end), wp = windowFor(p, g, prevStart(p, g, yb), end);
+      const c = measures(M, f, w.cur), l = okFrom(w.cmp[0]) ? measures(M, f, w.cmp) : null, v = okFrom(wp.cmp[0]) ? measures(M, f, wp.cmp) : null;
       return { start: p, label: label(p, g, yb, true), full: label(p, g, yb), partial: w.partial, net: c.net, netLY: l && l.net, intake: c.intake, intakeLY: l && l.intake,
-        qtyR: c.qtyR, qtyB: c.qtyB, qtyRLY: l && l.qtyR, qtyBLY: l && l.qtyB, otd: c.otd, otdN: c.otdN, rateR: c.rateR, rateB: c.rateB };
+        qtyR: c.qtyR, qtyB: c.qtyB, qtyRLY: l && l.qtyR, qtyBLY: l && l.qtyB,
+        netPV: v && v.net, intakePV: v && v.intake, qtyRPV: v && v.qtyR, qtyBPV: v && v.qtyB, otd: c.otd, otdN: c.otdN, rateR: c.rateR, rateB: c.rateB };
     });
     // breakdowns for the selected window (current and comparison)
     const curS = M.fs.filter(x => inR(x.date, W.cur)), cmpS = W.cmpOK ? M.fs.filter(x => inR(x.date, W.cmp)) : [];
@@ -719,7 +721,7 @@ if (typeof module !== 'undefined') module.exports = Engine;
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const HIST = JSON.parse(document.getElementById('hist').textContent);
   const E = Engine;
-  let RAW = null, M = null, CUR = null;
+  let RAW = null, M = null, CUR = null, CUR2 = null;   // CUR = chosen comparison, CUR2 = the other one
   const F = { cat: 'ALL', sub: 'ALL', cust: 'ALL', sp: 'ALL', scope: 'CUSTOMER', grain: 'M', ybasis: 4, cmp: 'PREV', period: null, measure: 'net' };
   let TAB = 'overview';
 
@@ -847,8 +849,8 @@ if (typeof module !== 'undefined') module.exports = Engine;
     const opts = $('#f-cmp').options;
     opts[0].text = 'vs previous ' + gn; opts[1].text = 'vs same ' + gn + ' last year';
     const fyRelevant = ['Q', 'H', 'Y'].includes(F.grain);
-    const yb = $('#f-yb'); yb.closest('.sel').dataset.disabled = String(!fyRelevant);
-    yb.title = fyRelevant ? 'Quarters, half-years and years start in April (FY) or January' : 'Only used for quarter, half-year and year views';
+    const yb = $('#f-yb'); yb.closest('.sel').dataset.disabled = 'false';
+    yb.title = fyRelevant ? 'Quarters, half-years and years start in April (FY) or January' : 'Week and month views are the same either way; the year-to-date cards show both bases';
   }
   function setSeg(id, v) { $$('#' + id + ' button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === v))); }
   function buildFilterOptions() {
@@ -881,13 +883,13 @@ if (typeof module !== 'undefined') module.exports = Engine;
   const SUBCOL = { 'PLAIN RIBBON': '--s1', 'PRINTED RIBBON': '--s2', 'PACKED ROLL': '--s3', 'HAND MADE BOW': '--s1', 'MACHINE MADE BOW': '--s2', 'TO CONFIRM': '--ghost', RIBBON: '--s1', BOW: '--s2' };
 
   // ---------- rendering ----------
-  function render() { if (!M) { renderAll(); return; } CUR = E.analyse(M, F); renderTab(TAB); renderChip(); }
+  function render() { if (!M) { renderAll(); return; } CUR = E.analyse(M, F); CUR2 = E.analyse(M, Object.assign({}, F, { cmp: F.cmp === 'PREV' ? 'LY' : 'PREV' })); renderTab(TAB); renderChip(); }
   // Reset = a truly empty page: no charts, tables, KPI tiles or filter choices left behind
   function clearAll() {
     $$('.js-plotly-plot').forEach(el => Plotly.purge(el));
     $$('.chart').forEach(el => el.innerHTML = '');
     ['#kpis', '#del-kpis', '#answers', '#hero-ytd', '#mix-cards', '#sub-cards', '#sub-legend', '#trend-legend', '#cust-table', '#sp-table', '#overdue-table'].forEach(s => { const e = $(s); if (e) e.innerHTML = ''; });
-    ['#hero-delta', '#hero-cmp', '#hero-note', '#trend-note', '#recon-note'].forEach(s => $(s).textContent = '');
+    ['#hero-delta', '#hero-cmp', '#hero-delta2', '#hero-cmp2', '#hero-note', '#trend-note', '#recon-note'].forEach(s => $(s).textContent = '');
     $('#hero-val').textContent = '—'; Plotly.purge('hero-spark');
     ['#f-sub', '#f-cust', '#f-sp', '#f-period'].forEach(s => $(s).innerHTML = '');
     Object.assign(F, { cat: 'ALL', sub: 'ALL', cust: 'ALL', sp: 'ALL', period: null }); setSeg('f-cat', 'ALL');
@@ -898,7 +900,7 @@ if (typeof module !== 'undefined') module.exports = Engine;
     $$('.tab').forEach(b => { if (['customers', 'products', 'delivery'].includes(b.dataset.tab)) b.dataset.disabled = String(!has); });
     renderChip();
     if (!has) { clearAll(); renderData(); if (TAB !== 'overview' && TAB !== 'data') selectTab('overview'); return; }
-    CUR = E.analyse(M, F); renderTab(TAB);
+    CUR = E.analyse(M, F); CUR2 = E.analyse(M, Object.assign({}, F, { cmp: F.cmp === 'PREV' ? 'LY' : 'PREV' })); renderTab(TAB);
   }
   function renderChip() {
     if (!M) { $('#data-chip-text').textContent = 'No data loaded'; return; }
@@ -922,6 +924,10 @@ if (typeof module !== 'undefined') module.exports = Engine;
     const hd = $('#hero-delta'); hd.innerHTML = ''; hd.appendChild(deltaEl(chg(c.net, p.net)));
     $('#hero-cmp').textContent = W.cmpOK ? 'vs ' + inr(p.net) + ' in ' + cmpLabel() + (W.partial ? ' (' + fmtD(W.cmp[0]) + '–' + fmtD(W.cmp[1]) + ')' : '')
       : 'No comparison: ' + cmpLabel() + ' is before the complete history (from ' + fmtD(M.reliableFrom) + ')' + ((F.grain === 'Y' || F.grain === 'Q' || F.grain === 'H') && F.ybasis === 1 ? '. Pick Year "FY Apr–Mar" to compare.' : '');
+    { const O = CUR2, hd2 = $('#hero-delta2'); hd2.innerHTML = ''; const same = F.grain === 'Y';
+      $('#hero-meta2').hidden = same || !O;
+      if (O && !same) { if (O.W.cmpOK) { hd2.appendChild(deltaEl(chg(c.net, O.cmp.net))); $('#hero-cmp2').textContent = 'vs ' + inr(O.cmp.net) + ' in ' + aLabel(O) + (O.W.partial ? ' (' + fmtD(O.W.cmp[0]) + '–' + fmtD(O.W.cmp[1]) + ')' : ''); }
+        else $('#hero-cmp2').textContent = 'No comparison with ' + aLabel(O) + ' (before the complete history)'; } }
     const gn = { W: 'weeks', M: 'months', Q: 'quarters', H: 'half-years', Y: 'years' }[F.grain];
     $('#hero-note').textContent = scopeTxt() + (F.scope === 'CUSTOMER' ? ' · customers only' : ' · incl. HQ / stock') + ' · line: last ' + CUR.trend.length + ' ' + gn;
     // year-to-date strip: calendar YTD and FY-to-date, same filters, like-for-like vs last year
@@ -974,11 +980,23 @@ if (typeof module !== 'undefined') module.exports = Engine;
   }
   function hexA(hex, a) { const h = hex.replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(x => x + x).join('') : h, 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + a + ')'; }
 
+  // both comparisons: PV = previous period of the same size, LY = same period last year
+  const both = () => ({ PV: F.cmp === 'PREV' ? CUR : CUR2, LY: F.cmp === 'PREV' ? CUR2 : CUR });
+  const gWord = () => ({ W: 'week', M: 'month', Q: 'quarter', H: 'half-year', Y: 'year' }[F.grain]);
+  const aLabel = A => E.label(A.W.cmp[0], F.grain, F.ybasis);
+  function upDown(cv, A, k) { if (!A || !A.W.cmpOK) return null; const d = chg(cv, A.cmp[k]); return d === null ? null : `<b>${d >= 0 ? 'up' : 'down'} ${Math.abs(d * 100).toFixed(1)}%</b> on ${esc(aLabel(A))}`; }
+  function bothTxt(cv, k) { const { PV, LY } = both(); const a = upDown(cv, PV, k), b = F.grain === 'Y' ? null : upDown(cv, LY, k);
+    return [a ? a + ' (previous ' + gWord() + ')' : null, b ? b + ' (same ' + gWord() + ' last year)' : null].filter(Boolean).join(' and '); }
+  function movers(A) { if (!A || !A.W.cmpOK) return null; const mv = [...new Set([...A.custCur.keys(), ...A.custCmp.keys()])].map(k => [k, (A.custCur.get(k) || 0) - (A.custCmp.get(k) || 0)]).sort((a, b) => b[1] - a[1]);
+    if (mv.length < 2) return null; const up = mv[0], dn = mv[mv.length - 1];
+    return (up[1] > 0 ? `<b>${esc(A.custName.get(up[0]))}</b> +${inr(up[1])}` : 'no customer grew') + (dn[1] < 0 ? `; <b>${esc(A.custName.get(dn[0]))}</b> ${inr(dn[1])}` : '') + ` vs ${esc(aLabel(A))}`; }
+
   function renderAnswers() {
     const c = CUR.cur, p = CUR.cmp, ol = $('#answers'); ol.innerHTML = '';
     const items = [];
     const d = chg(c.net, p.net);
-    items.push(['How are sales doing?', `<b>${inr(c.net)}</b> net sales in ${esc(perLabel())}${CUR.W.partial ? ' so far' : ''}` + (d === null ? '.' : `, <b>${d >= 0 ? 'up' : 'down'} ${Math.abs(d * 100).toFixed(1)}%</b> on ${esc(cmpLabel())}.`)]);
+    const bt = bothTxt(c.net, 'net');
+    items.push(['How are sales doing?', `<b>${inr(c.net)}</b> net sales in ${esc(perLabel())}${CUR.W.partial ? ' so far' : ''}` + (bt ? ', ' + bt + '.' : '.')]);
     const cc = [...CUR.custCur.entries()].sort((a, b) => b[1] - a[1]);
     if (cc.length) {
       const [cid, v] = cc[0]; const name = CUR.custName.get(cid); let extra = '';
@@ -986,39 +1004,42 @@ if (typeof module !== 'undefined') module.exports = Engine;
       items.push(['Who buys most?', `<b>${esc(name)}</b> – ${inr(v)}, ${pct(c.net ? v / c.net : null)} of sales${extra}.`]);
     }
     const mv = [...new Set([...CUR.custCur.keys(), ...CUR.custCmp.keys()])].map(k => [k, (CUR.custCur.get(k) || 0) - (CUR.custCmp.get(k) || 0)]).sort((a, b) => b[1] - a[1]);
-    if (mv.length > 1 && CUR.W.cmpOK) { const up = mv[0], dn = mv[mv.length - 1]; items.push(['What changed most?', (up[1] > 0 ? `<b>${esc(CUR.custName.get(up[0]))}</b> +${inr(up[1]).replace('₹', '₹')}` : 'No customer grew') + (dn[1] < 0 ? `; <b>${esc(CUR.custName.get(dn[0]))}</b> ${inr(dn[1])}` : '') + ` vs ${esc(cmpLabel())}.`]); }
+    { const { PV, LY } = both(); const m = [movers(PV), F.grain === 'Y' ? null : movers(LY)].filter(Boolean); if (m.length) items.push(['What changed most?', m.join('.<br>') + '.']); }
+    if (false) { const up = mv[0], dn = mv[mv.length - 1]; items.push(['What changed most?', (up[1] > 0 ? `<b>${esc(CUR.custName.get(up[0]))}</b> +${inr(up[1]).replace('₹', '₹')}` : 'No customer grew') + (dn[1] < 0 ? `; <b>${esc(CUR.custName.get(dn[0]))}</b> ${inr(dn[1])}` : '') + ` vs ${esc(cmpLabel())}.`]); }
     items.push(['What is still to ship?', `<b>${inr(CUR.openVal)}</b> in ${CUR.openLines.toLocaleString('en-IN')} open lines; <b>${inr(CUR.overdueVal)}</b> (${CUR.overdueLines.toLocaleString('en-IN')} lines) past the promised date.`]);
-    if (c.otd !== null) items.push(['Are we on time?', `<b>${pct(c.otd)}</b> of ${c.otdN} lines completed in the period shipped by the committed date` + (p.otd !== null ? ` (${pct(p.otd)} before).` : '.')]);
-    if (c.b2b !== null) items.push(['Are orders keeping up?', `Orders ${inr(c.intake)} vs sales ${inr(c.net)} – book-to-bill <b>${c.b2b.toFixed(2)}×</b>, ${c.b2b >= 1 ? 'the order book is growing' : 'billing more than new orders'}.`]);
+    if (c.otd !== null) items.push(['Are we on time?', `<b>${pct(c.otd)}</b> of ${c.otdN} lines completed in the period shipped by the committed date` + (() => { const { PV, LY } = both(); const s = [PV && PV.W.cmpOK && PV.cmp.otd !== null ? `${pct(PV.cmp.otd)} in ${esc(aLabel(PV))}` : null, F.grain !== 'Y' && LY && LY.W.cmpOK && LY.cmp.otd !== null ? `${pct(LY.cmp.otd)} in ${esc(aLabel(LY))}` : null].filter(Boolean); return s.length ? ` (${s.join('; ')}).` : '.'; })()]);
+    if (c.b2b !== null) items.push(['Are orders keeping up?', `Orders ${inr(c.intake)} vs sales ${inr(c.net)} – book-to-bill <b>${c.b2b.toFixed(2)}×</b>, ${c.b2b >= 1 ? 'the order book is growing' : 'billing more than new orders'}` + (() => { const { PV, LY } = both(); const s = [PV && PV.W.cmpOK && PV.cmp.b2b !== null ? `${PV.cmp.b2b.toFixed(2)}× in ${esc(aLabel(PV))}` : null, F.grain !== 'Y' && LY && LY.W.cmpOK && LY.cmp.b2b !== null ? `${LY.cmp.b2b.toFixed(2)}× in ${esc(aLabel(LY))}` : null].filter(Boolean); return s.length ? ` (was ${s.join('; ')}).` : '.'; })()]);
     items.forEach((it, i) => { const li = document.createElement('li'); li.innerHTML = `<span class="qnum">${i + 1}</span><span><span class="muted">${esc(it[0])}</span><br>${it[1]}</span>`; ol.appendChild(li); });
   }
 
   function renderTrend() {
     const tr = CUR.trend, g = F.grain, mz = F.measure;
     const gname = { W: 'week', M: 'month', Q: 'quarter', H: 'half-year', Y: 'year' }[g];
-    const cmpName = F.cmp === 'PREV' ? 'Previous ' + gname : 'Same ' + gname + ' last year';
+    const lyName = 'Same ' + gname + ' last year', pvName = 'Previous ' + gname, showPV = g !== 'Y';
     const qtyBlocked = mz === 'qty' && F.cat === 'ALL';
-    let cur, ly, unit, title;
+    let cur, ly, pv, unit, title;
     const L = v => (v === null || v === undefined) ? null : v / 1e5;
-    if (mz === 'net') { cur = tr.map(t => L(t.net)); ly = tr.map(t => L(t.netLY)); unit = '₹ lakh'; title = 'Net sales by ' + gname; }
-    else if (mz === 'intake') { cur = tr.map(t => L(t.intake)); ly = tr.map(t => L(t.intakeLY)); unit = '₹ lakh'; title = 'Orders received by ' + gname; }
-    else { const k = F.cat === 'BOW' ? 'qtyB' : 'qtyR'; cur = tr.map(t => L(t[k])); ly = tr.map(t => L(t[k + 'LY'])); unit = 'lakh ' + (F.cat === 'BOW' ? 'pcs' : 'yds'); title = 'Quantity dispatched by ' + gname; }
+    if (mz === 'net') { cur = tr.map(t => L(t.net)); ly = tr.map(t => L(t.netLY)); pv = tr.map(t => L(t.netPV)); unit = '₹ lakh'; title = 'Net sales by ' + gname; }
+    else if (mz === 'intake') { cur = tr.map(t => L(t.intake)); ly = tr.map(t => L(t.intakeLY)); pv = tr.map(t => L(t.intakePV)); unit = '₹ lakh'; title = 'Orders received by ' + gname; }
+    else { const k = F.cat === 'BOW' ? 'qtyB' : 'qtyR'; cur = tr.map(t => L(t[k])); ly = tr.map(t => L(t[k + 'LY'])); pv = tr.map(t => L(t[k + 'PV'])); unit = 'lakh ' + (F.cat === 'BOW' ? 'pcs' : 'yds'); title = 'Quantity dispatched by ' + gname; }
     $('#trend-title').textContent = title;
     $('#trend-sub').textContent = scopeTxt() + ' · ' + unit;
     const lg = $('#trend-legend'); lg.innerHTML = '';
     if (qtyBlocked) { noData('c-trend', 'Yards and pieces are never added together. Pick Ribbons or Bows to chart quantity.'); $('#trend-note').textContent = ''; return; }
     clearNoData('c-trend');
-    lg.innerHTML = '<span><i class="box" style="background:var(--s1)"></i>' + (g === 'Y' ? 'Year' : 'This ' + gname) + '</span><span><i style="background:var(--ink-2)"></i>' + cmpName + '</span>';
+    lg.innerHTML = '<span><i class="box" style="background:var(--s1)"></i>' + (g === 'Y' ? 'Year' : 'This ' + gname) + '</span><span><i style="background:var(--ink-2)"></i>' + lyName + '</span>' + (showPV ? '<span><i style="background:var(--gold);height:2px;border-top:2px dashed var(--gold)"></i>' + pvName + '</span>' : '');
     const x = tr.map(t => t.label + (t.partial ? ' ▸' : ''));
     const data = [
       { x, y: cur, type: 'bar', name: 'This ' + gname, marker: { color: tr.map(t => t.partial ? hexA(css('--s1'), .55) : css('--s1')), cornerradius: 4 },
         customdata: tr.map(t => t.full + (t.partial ? ' (to date)' : '')), hovertemplate: '<b>%{y:,.1f}</b> ' + unit + '<br>%{customdata}<extra></extra>' },
-      { x, y: ly, type: 'scatter', mode: 'lines+markers', name: cmpName, line: { color: css('--ink-2'), width: 2 }, marker: { size: 8, color: css('--ink-2'), line: { color: css('--surface'), width: 2 } },
-        hovertemplate: cmpName + ': <b>%{y:,.1f}</b> ' + unit + '<extra></extra>', connectgaps: false }
+      { x, y: ly, type: 'scatter', mode: 'lines+markers', name: lyName, line: { color: css('--ink-2'), width: 2 }, marker: { size: 8, color: css('--ink-2'), line: { color: css('--surface'), width: 2 } },
+        hovertemplate: lyName + ': <b>%{y:,.1f}</b> ' + unit + '<extra></extra>', connectgaps: false }
     ];
+    if (showPV) data.push({ x, y: pv, type: 'scatter', mode: 'lines+markers', name: pvName, line: { color: css('--gold'), width: 2, dash: 'dash' }, marker: { size: 6, color: css('--gold') },
+        hovertemplate: pvName + ': <b>%{y:,.1f}</b> ' + unit + '<extra></extra>', connectgaps: false });
     plot('c-trend', data, { hovermode: 'x unified', xaxis: catX(), yaxis: { title: { text: unit, font: { size: 11 } }, gridcolor: css('--grid'), tickfont: { color: css('--muted') }, rangemode: 'tozero', zeroline: false, automargin: true } });
     const last = tr[tr.length - 1];
-    $('#trend-note').textContent = (last.partial ? '▸ ' + last.full + ' is still running – bar is lighter and the comparison is cut at the same day. ' : '')
+    $('#trend-note').textContent = (last.partial ? '▸ ' + last.full + ' is still running – bar is lighter and both comparisons are cut at the same number of days. ' : '')
       + (CUR.trendCut || ly.some(v => v === null) ? 'Sales history is complete from ' + fmtD(M.reliableFrom) + ', so earlier periods and their comparisons are left out. ' : '') + 'Hover a bar for exact values.';
   }
 

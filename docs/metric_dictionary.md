@@ -25,7 +25,7 @@ Every definition below is taken from the dashboard's JavaScript engine (`dashboa
 ## Period and comparison conventions
 
 - **Grain:** week, month, quarter, half-year, year. **Year basis:** calendar (Jan–Dec) or financial (Apr–Mar).
-- **Compare:** vs the previous period (default) or vs the same period last year; the trend chart follows the choice. For a partial period the comparison covers the **same number of days** (like-for-like), so a half-finished month is never compared with a full one.
+- **Compare:** every view shows both the previous period and the same period last year; the Compare box picks which one the KPI tiles use (default: previous period). For a partial period the comparison covers the **same number of days** (like-for-like), so a half-finished month is never compared with a full one.
 - Comparisons are only reliable from **April 2025**: earlier months are under-covered (see the reconciliation in `validation_report.md`).
 
 ## Not defined here (no data)
